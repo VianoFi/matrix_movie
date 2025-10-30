@@ -1,32 +1,25 @@
-using System.Diagnostics;
-using matrix_movie.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace matrix_movie.Controllers
+public class HomeController : Controller
 {
-    public class HomeController : Controller
+    // Pagina pubblica - nessuna autorizzazione
+    public IActionResult Index()
     {
-        private readonly ILogger<HomeController> _logger;
+        return View();
+    }
 
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
+    // Solo utenti autenticati
+    [Authorize]
+    public IActionResult Profile()
+    {
+        return View();
+    }
 
-        public IActionResult Index()
-        {
-            return View();
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+    // Solo Admin
+    [Authorize(Roles = "Admin")]
+    public IActionResult AdminPanel()
+    {
+        return View();
     }
 }
