@@ -1,8 +1,100 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model List<matrix_movie.Models.Movie>
+@{
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Film Disponibili</h1>
+
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-controller="Admin" asp-action="AddMovie" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Aggiungi Film
+            </a>
+        }
+    </div>
+
+    <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-4">
+        @foreach (var movie in Model)
+        {
+            <div class="col">
+                <div class="card h-100 movie-card">
+                    <div class="position-relative">
+                        <img src="@movie.ImageUrl" class="card-img-top" alt="@movie.Title" />
+
+                        @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
+                        {
+                            <button class="btn btn-primary btn-sm position-absolute top-0 end-0 m-2 add-movie-btn"
+                                    data-movie-id="@movie.Id"
+                                    title="Segna come visto">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        }
+                    </div>
+                    <div class="card-body p-2">
+                        <h6 class="card-title mb-1 text-truncate">@movie.Title</h6>
+                        <small class="text-muted">@movie.Genre • @movie.Year</small>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 </div>
+
+@section Styles {
+    <style>
+        .movie-card {
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+            .movie-card:hover {
+                transform: scale(1.05);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            }
+
+            .movie-card img {
+                height: 300px;
+                object-fit: cover;
+            }
+
+        .add-movie-btn {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .movie-card:hover .add-movie-btn {
+            opacity: 1;
+        }
+
+        @@media (max-width: 768px) {
+            .movie-card img
+
+        {
+            height: 200px;
+        }
+
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.add-movie-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const movieId = this.getAttribute('data-movie-id');
+
+                // TODO: Quando avremo il database, faremo una chiamata AJAX
+                alert('Film ' + movieId + ' aggiunto ai visti!');
+
+                // Cambia il bottone in "visto"
+                this.innerHTML = '<i class="bi bi-check-lg"></i>';
+                this.classList.remove('btn-primary');
+                this.classList.add('btn-success');
+                this.disabled = true;
+            });
+        });
+    </script>
+}

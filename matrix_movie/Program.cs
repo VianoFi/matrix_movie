@@ -11,13 +11,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddRoles<IdentityRole>()  // ⬅️ AGGIUNGI QUESTA RIGA
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)  // ⬅️ CAMBIA IN FALSE
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddControllersWithViews();
 
-// AGGIUNGI QUESTA CONFIGURAZIONE
+// Configurazione cookie
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Identity/Account/Login";
@@ -27,7 +27,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-// Inizializza i ruoli - METTI QUESTO SOLO UNA VOLTA QUI
+// Inizializza i ruoli
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
