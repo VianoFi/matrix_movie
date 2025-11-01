@@ -8,5 +8,7 @@
         public string Genre { get; set; }
         public int Year { get; set; }
         public bool IsWatched { get; set; } // Per utenti loggati
+        public string Description { get; set; } // Breve descrizione
+        public string Plot { get; set; } // Trama completa
     }
 }

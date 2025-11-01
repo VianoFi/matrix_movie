@@ -19,7 +19,7 @@
         @foreach (var movie in Model)
         {
             <div class="col">
-                <div class="card h-100 movie-card">
+                <div class="card h-100 movie-card" onclick="location.href='@Url.Action("Dettagli", "Home", new { id = movie.Id })'">
                     <div class="position-relative">
                         <img src="@movie.ImageUrl" class="card-img-top" alt="@movie.Title" />
 
@@ -69,12 +69,9 @@
         }
 
         @@media (max-width: 768px) {
-            .movie-card img
-
-        {
-            height: 200px;
-        }
-
+            .movie-card img {
+                height: 200px;
+            }
         }
     </style>
 }
@@ -82,14 +79,12 @@
 @section Scripts {
     <script>
         document.querySelectorAll('.add-movie-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
+            btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 const movieId = this.getAttribute('data-movie-id');
 
-                // TODO: Quando avremo il database, faremo una chiamata AJAX
+                // Azione simulata
                 alert('Film ' + movieId + ' aggiunto ai visti!');
-
-                // Cambia il bottone in "visto"
                 this.innerHTML = '<i class="bi bi-check-lg"></i>';
                 this.classList.remove('btn-primary');
                 this.classList.add('btn-success');

@@ -1,0 +1,60 @@
+﻿@model matrix_movie.Models.Movie
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container mt-5">
+    <div class="card shadow-lg border-0">
+        <div class="row g-0">
+            <div class="col-md-4">
+                <img src="@Model.ImageUrl" alt="@Model.Title" class="img-fluid rounded-start h-100 object-fit-cover" />
+            </div>
+            <div class="col-md-8 d-flex flex-column justify-content-between">
+                <div class="card-body">
+                    <h2 class="card-title mb-3">@Model.Title</h2>
+                    <p class="text-muted mb-2"><strong>Genere:</strong> @Model.Genre</p>
+                    <p class="text-muted mb-3"><strong>Anno:</strong> @Model.Year</p>
+
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <p class="mb-3"><strong>Descrizione:</strong> @Model.Description</p>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Plot))
+                    {
+                        <p class="mb-4"><strong>Trama:</strong> @Model.Plot</p>
+                    }
+
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary mt-2">
+                        <i class="bi bi-arrow-left"></i> Torna alla Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .object-fit-cover {
+            object-fit: cover;
+        }
+
+        .card {
+            border-radius: 15px;
+        }
+
+            .card img {
+                border-top-left-radius: 15px;
+                border-bottom-left-radius: 15px;
+            }
+
+        @@media (max-width: 768px) {
+            .card img {
+                border-top-right-radius: 15px;
+                border-bottom-left-radius: 0;
+            }
+        }
+    </style>
+}

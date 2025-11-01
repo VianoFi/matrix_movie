@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using matrix_movie.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace matrix_movie.Data
@@ -9,5 +10,7 @@ namespace matrix_movie.Data
             : base(options)
         {
         }
+
+        public DbSet<Movie> Movies { get; set; } // <-- aggiungi questa riga
     }
 }
