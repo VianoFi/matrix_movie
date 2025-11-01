@@ -37,10 +37,18 @@
                         @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
                         {
                             <li class="nav-item ms-2">
-                                <a class="nav-link matrix-link" asp-controller="Home" asp-action="Visti">
-                                    I TUOI FILM
+                                <a class="nav-link matrix-link" asp-controller="Home" asp-action="Visti">I TUOI FILM</a>
+                            </li>
+                            <li class="nav-item ms-3">
+                                <a class="nav-link matrix-link position-relative" asp-controller="Carrello" asp-action="Index">
+                                    🛒
+                                    <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
+                                        @(Context.Session.GetObjectFromJson<List<int>>("Carrello")?.Count ?? 0)
+                                    </span>
                                 </a>
                             </li>
+
+
                         }
                     </ul>
 
@@ -150,5 +158,12 @@
             text-shadow: 0 0 10px #39FF14;
         }
     </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const res = await fetch('/js/cartCount');
+        });
+    </script>
+
 </body>
 </html>

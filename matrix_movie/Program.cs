@@ -2,6 +2,7 @@
 using matrix_movie.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,19 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
 
 builder.Services.AddControllersWithViews();
 
+// ✅ Cache necessaria per la sessione
+builder.Services.AddDistributedMemoryCache();
+
+// ✅ Sessione configurata correttamente
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(2);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // evita problemi in locale
+});
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Identity/Account/Login";
@@ -28,6 +42,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
+// ✅ Stripe config
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
 using (var scope = app.Services.CreateScope())
 {
@@ -35,7 +51,7 @@ using (var scope = app.Services.CreateScope())
     SeedMovies.Inizializza(db);
 }
 
-// Configurazione pipeline
+// ✅ Ordine corretto del middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -50,8 +66,12 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+// ✅ Sessione deve essere qui (dopo auth, prima delle route)
+app.UseSession();
 
 app.MapControllerRoute(
     name: "default",

@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
 <div class="container mt-4">
+
     <!-- Se Admin: pulsante aggiungi -->
     @if (User.IsInRole("Admin"))
     {
@@ -18,7 +19,6 @@
     }
 
     <!-- Griglia completa -->
-    
     <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-4">
         @foreach (var movie in Model)
         {
@@ -31,7 +31,8 @@
 
                         @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
                         {
-                            if (isWatched)
+                            <!-- Aggiungi ai visti -->
+                            @if (isWatched)
                             {
                                 <button class="btn-watch position-absolute top-0 end-0 m-2" disabled title="Già visto">
                                     <i class="bi bi-check-lg"></i>
@@ -47,6 +48,15 @@
                                     <i class="bi bi-plus-lg"></i>
                                 </button>
                             }
+
+                            <!-- Aggiungi al carrello -->
+                            <button class="btn-cart position-absolute top-0 start-0 m-2 add-cart-btn"
+                                    type="button"
+                                    data-movie-id="@movie.Id"
+                                    title="Aggiungi al carrello"
+                                    onclick="event.stopPropagation();">
+                                🛒
+                            </button>
                         }
                     </div>
                     <div class="card-body p-2 text-center">
@@ -73,7 +83,8 @@
 
                         @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
                         {
-                            if (isWatched)
+                            <!-- Pulsante aggiungi ai visti -->
+                            @if (isWatched)
                             {
                                 <button class="btn-watch position-absolute top-0 end-0 m-2" disabled title="Già visto">
                                     <i class="bi bi-check-lg"></i>
@@ -88,6 +99,14 @@
                                     <i class="bi bi-plus-lg"></i>
                                 </button>
                             }
+
+                            <!-- Pulsante aggiungi al carrello -->
+                            <button class="btn-cart position-absolute top-0 start-0 m-2 add-cart-btn"
+                                    type="button"
+                                    data-movie-id="@movie.Id"
+                                    title="Aggiungi al carrello">
+                                🛒
+                            </button>
                         }
 
                         <div class="movie-info text-center mt-2">
@@ -137,7 +156,27 @@
             border: 1px solid #39FF14;
         }
 
-        /* Scroll "più visti" */
+        /* Pulsante carrello */
+        .btn-cart {
+            border: 1px solid #39FF14;
+            color: #39FF14;
+            background: transparent;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .3s;
+        }
+
+            .btn-cart:hover {
+                background: #39FF14;
+                color: #000;
+                box-shadow: 0 0 10px #39FF14;
+            }
+
+        /* Scroll più visti */
         .scroll-section {
             overflow-x: auto;
             white-space: nowrap;
@@ -163,18 +202,6 @@
                 box-shadow: 0 0 15px #39FF14;
             }
 
-        .btn-matrix {
-            border: 1px solid #39FF14;
-            color: #39FF14;
-            background: transparent;
-            transition: all .3s;
-        }
-
-            .btn-matrix:hover {
-                background: #39FF14;
-                color: #000;
-            }
-
         .btn-watch {
             border: 1px solid #39FF14;
             color: #39FF14;
@@ -190,36 +217,46 @@
                 background: #39FF14;
                 color: #000;
             }
-
-        ::-webkit-scrollbar {
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #39FF14;
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #111;
-        }
     </style>
 }
 
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            let selectedMovieId = null;
+
+            // --- Aggiungi ai visti ---
             document.querySelectorAll('.add-movie-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    selectedMovieId = btn.getAttribute('data-movie-id');
-                    document.getElementById('movieId').value = selectedMovieId;
+                    const id = btn.getAttribute('data-movie-id');
+                    document.getElementById('movieId').value = id;
                     document.getElementById('watchDate').value = new Date().toISOString().split('T')[0];
                     new bootstrap.Modal(document.getElementById('addWatchedModal')).show();
                 });
             });
 
+            // --- Aggiungi al carrello ---
+            document.querySelectorAll('.add-cart-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.getAttribute('data-movie-id');
+                    fetch('/Carrello/Aggiungi', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'id=' + encodeURIComponent(id)
+                    })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.success) {
+                            document.getElementById('cart-count').textContent = d.count;
+                            btn.innerHTML = '✔️';
+                            btn.disabled = true;
+                        }
+                    });
+                });
+            });
+
+            // --- Salva film visto ---
             document.getElementById('saveWatchedBtn').addEventListener('click', () => {
                 const id = document.getElementById('movieId').value;
                 const date = document.getElementById('watchDate').value;
@@ -238,7 +275,7 @@
                 .catch(() => alert('Errore di rete'));
             });
 
-            function getToken(){
+            function getToken() {
                 const el = document.querySelector('input[name="__RequestVerificationToken"]');
                 return el ? el.value : '';
             }
