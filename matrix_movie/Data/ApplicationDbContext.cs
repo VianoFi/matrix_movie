@@ -11,6 +11,9 @@ namespace matrix_movie.Data
         {
         }
 
-        public DbSet<Movie> Movies { get; set; } // <-- aggiungi questa riga
+        public DbSet<Movie> Movies { get; set; }
+
+        
+        public DbSet<UserMovie> UserMovies { get; set; }
     }
 }

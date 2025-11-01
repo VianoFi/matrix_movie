@@ -20,7 +20,54 @@
             <h5>Trama</h5>
             <p>@Model.Plot</p>
 
-            <a asp-controller="Home" asp-action="Index" class="btn-matrix mt-3">⬅ Torna ai film</a>
+            <div class="mt-4 d-flex gap-2">
+                <a asp-controller="Home" asp-action="Index" class="btn-matrix">⬅ Torna ai film</a>
+
+                @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
+                {
+                    if (ViewBag.IsWatched == true)
+                    {
+                        <button class="btn-matrix watched" disabled>✔ Già visto</button>
+                    }
+                    else
+                    {
+                        <button class="btn-matrix add" id="addWatchedBtn"
+                                type="button"
+                                data-movie-id="@Model.Id"
+                                data-movie-title="@Model.Title">
+                            ➕ Aggiungi ai visti
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modale per aggiungere ai visti -->
+<div class="modal fade" id="addWatchedModal" tabindex="-1" aria-labelledby="addWatchedModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background-color:#0d0d0d; border:1px solid #39FF14; color:#39FF14;">
+            <div class="modal-header">
+                <h5 class="modal-title">🎥 Segna come visto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="watchedForm">
+                    <div class="mb-3">
+                        <label for="watchDate" class="form-label">Data di visione</label>
+                        <input type="date" id="watchDate" class="form-control bg-dark text-light border-success" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Commento personale</label>
+                        <textarea id="comment" class="form-control bg-dark text-light border-success" rows="3" maxlength="300"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="saveWatchedBtn">💾 Salva</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+            </div>
         </div>
     </div>
 </div>
@@ -28,7 +75,7 @@
 @section Styles {
     <style>
         body {
-            background-color: #000;
+            background: #000;
             color: #39FF14;
             font-family: 'Share Tech Mono', monospace;
         }
@@ -42,7 +89,7 @@
             border: 2px solid #39FF14;
             box-shadow: 0 0 20px #39FF14;
             border-radius: 10px;
-            transition: transform 0.3s ease;
+            transition: transform .3s;
         }
 
             .movie-detail-img:hover {
@@ -50,20 +97,81 @@
             }
 
         .btn-matrix {
-            border: 2px solid #39FF14;
+            border: 1px solid #39FF14;
             color: #39FF14;
             background: transparent;
             padding: 10px 20px;
             text-transform: uppercase;
-            border-radius: 5px;
-            transition: all 0.3s;
+            border-radius: 8px;
+            transition: all .3s;
             text-decoration: none;
         }
 
             .btn-matrix:hover {
-                background-color: #39FF14;
+                background: #39FF14;
                 color: #000;
                 box-shadow: 0 0 10px #39FF14;
             }
+
+            /* Pulsante "Già visto" */
+            .btn-matrix.watched {
+                border-color: #888;
+                color: #888;
+                background: #111;
+                cursor: not-allowed;
+                box-shadow: none;
+            }
+
+            /* Pulsante "Aggiungi ai visti" */
+            .btn-matrix.add {
+                border-color: #39FF14;
+                color: #39FF14;
+            }
+
+                .btn-matrix.add:hover {
+                    background: #39FF14;
+                    color: #000;
+                    box-shadow: 0 0 12px #39FF14;
+                }
     </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const addBtn = document.getElementById('addWatchedBtn');
+            if (addBtn) {
+                addBtn.addEventListener('click', () => {
+                    const dateInput = document.getElementById('watchDate');
+                    if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+                    new bootstrap.Modal(document.getElementById('addWatchedModal')).show();
+                });
+            }
+
+            document.getElementById('saveWatchedBtn').addEventListener('click', () => {
+                const movieId = document.getElementById('addWatchedBtn')?.getAttribute('data-movie-id');
+                const date = document.getElementById('watchDate').value;
+                const comment = document.getElementById('comment').value;
+
+                if (!movieId) return;
+
+                fetch('@Url.Action("SegnaComeVisto", "Home")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `id=${encodeURIComponent(movieId)}&watchDate=${encodeURIComponent(date)}&comment=${encodeURIComponent(comment)}`
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('addWatchedModal'));
+                        if (modal) modal.hide();
+                        window.location.href = '/Home/Visti';
+                    } else {
+                        alert('❌ Errore: ' + (d.message || 'salvataggio non riuscito'));
+                    }
+                })
+                .catch(() => alert('❌ Errore di rete'));
+            });
+        });
+    </script>
 }

@@ -1,0 +1,180 @@
+﻿@model List<matrix_movie.Models.UserMovie>
+@{
+    ViewData["Title"] = "I miei film visti";
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="matrix-title">🗓️ I miei film visti</h1>
+        <a asp-controller="Home" asp-action="Index" class="btn-back">⬅ Torna ai film</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-dark" style="border:1px solid #39FF14; color:#39FF14; background:#000;">
+            Non hai ancora segnato nessun film come visto.
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-4">
+            @foreach (var item in Model.OrderByDescending(x => x.WatchDate))
+            {
+                <div class="col">
+                    <div class="card h-100 matrix-card">
+                        <div class="position-relative">
+                            <a asp-controller="Home" asp-action="Dettagli" asp-route-id="@item.MovieId">
+                                <img src="@item.Movie?.ImageUrl" class="card-img-top movie-poster" alt="@item.Movie?.Title" />
+                            </a>
+                            <span class="badge-date">@item.WatchDate.ToString("dd MMM yyyy")</span>
+                        </div>
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1 text-truncate">@item.Movie?.Title</h6>
+                            <small class="text-muted">@item.Movie?.Genre • @item.Movie?.Year</small>
+                            @if (!string.IsNullOrWhiteSpace(item.Comment))
+                            {
+                                <div class="mt-2 small" style="white-space:pre-line;">“@item.Comment”</div>
+                            }
+                        </div>
+                        <div class="card-footer p-2 d-flex justify-content-between">
+                            <form asp-action="EliminaVisto" method="post" class="m-0">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn-matrix btn-sm">🗑️</button>
+                            </form>
+
+                            <button type="button" class="btn-matrix btn-sm edit-btn"
+                                    data-id="@item.Id"
+                                    data-date="@item.WatchDate.ToString("yyyy-MM-dd")"
+                                    data-comment="@item.Comment">
+                                ✏️
+                            </button>
+
+                            <a asp-controller="Home" asp-action="Dettagli" asp-route-id="@item.MovieId"
+                               class="btn-matrix btn-sm">🔍</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Modale modifica -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background-color:#0d0d0d; border:1px solid #39FF14; color:#39FF14;">
+            <div class="modal-header">
+                <h5 class="modal-title">✏️ Modifica visione</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editId" />
+                    <div class="mb-3">
+                        <label for="editDate" class="form-label">Data</label>
+                        <input type="date" id="editDate" class="form-control bg-dark text-light border-success" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editComment" class="form-label">Commento</label>
+                        <textarea id="editComment" class="form-control bg-dark text-light border-success" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="saveEditBtn">💾 Salva</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        body {
+            background: #000;
+            color: #39FF14;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .matrix-title {
+            text-shadow: 0 0 10px #39FF14;
+        }
+
+        .matrix-card {
+            background: #0d0d0d;
+            border: 1px solid #39FF14;
+            transition: .3s;
+        }
+
+            .matrix-card:hover {
+                box-shadow: 0 0 15px #39FF14;
+            }
+
+        .btn-matrix, .btn-back {
+            border: 1px solid #39FF14;
+            color: #39FF14;
+            background: transparent;
+            transition: .3s;
+            border-radius: 6px;
+            padding: 6px 12px;
+            text-decoration: none;
+        }
+
+            .btn-matrix:hover, .btn-back:hover {
+                background: #39FF14;
+                color: #000;
+                box-shadow: 0 0 10px #39FF14;
+            }
+
+        .movie-poster {
+            height: 260px;
+            object-fit: cover;
+            border-bottom: 1px solid #39FF14;
+        }
+
+        .badge-date {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            background: #000;
+            color: #39FF14;
+            border: 1px solid #39FF14;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: .8rem;
+            box-shadow: 0 0 10px #39FF14;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            let currentId = null;
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentId = btn.dataset.id;
+                    document.getElementById('editId').value = currentId;
+                    document.getElementById('editDate').value = btn.dataset.date;
+                    document.getElementById('editComment').value = btn.dataset.comment || '';
+                    new bootstrap.Modal(document.getElementById('editModal')).show();
+                });
+            });
+
+            document.getElementById('saveEditBtn').addEventListener('click', () => {
+                const id = document.getElementById('editId').value;
+                const date = document.getElementById('editDate').value;
+                const comment = document.getElementById('editComment').value;
+
+                fetch('@Url.Action("ModificaVisto", "Home")', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                    body:`id=${id}&watchDate=${encodeURIComponent(date)}&comment=${encodeURIComponent(comment)}`
+                }).then(()=>location.reload());
+            });
+        });
+    </script>
+}
