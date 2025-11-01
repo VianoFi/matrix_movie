@@ -1,65 +1,113 @@
 ﻿@model List<matrix_movie.Models.Movie>
 @{
     ViewData["Title"] = "Home";
+    var watchedMovies = ViewBag.WatchedMovies as List<int> ?? new List<int>();
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
 <div class="container mt-4">
-    <!-- Sezione scorrevole Più Visti -->
-    <h2 class="matrix-subtitle mb-3">🔥 Più Visti</h2>
-    <div class="scroll-section mb-5">
-        <div class="movie-row">
-            @foreach (var movie in Model.Take(10))
-            {
-                <div class="movie-card">
-                    <a asp-controller="Home" asp-action="Dettagli" asp-route-id="@movie.Id">
-                        <img src="@movie.ImageUrl" alt="@movie.Title" class="movie-poster" />
-                    </a>
-                    <div class="movie-info text-center mt-2">
-                        <h6>@movie.Title</h6>
-                        <small>@movie.Genre • @movie.Year</small>
-                    </div>
-                </div>
-            }
+    <!-- Se Admin: pulsante aggiungi -->
+    @if (User.IsInRole("Admin"))
+    {
+        <div class="text-end mb-4">
+            <a asp-controller="Admin" asp-action="AddMovie" class="btn-matrix">
+                <i class="bi bi-plus-circle"></i> Aggiungi Film
+            </a>
         </div>
-    </div>
+    }
 
-    <!-- Griglia completa dei film -->
-    <h2 class="matrix-subtitle mb-3">🎬 Tutti i Film</h2>
+    <!-- Griglia completa -->
+    
     <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-4">
         @foreach (var movie in Model)
         {
+            var isWatched = watchedMovies.Contains(movie.Id);
             <div class="col">
-                <div class="card h-100 matrix-card">
+                <div class="card h-100 matrix-card"
+                     onclick="location.href='@Url.Action("Dettagli", "Home", new { id = movie.Id })'">
                     <div class="position-relative">
-                        <a asp-controller="Home" asp-action="Dettagli" asp-route-id="@movie.Id">
-                            <img src="@movie.ImageUrl" class="card-img-top movie-poster" alt="@movie.Title" />
-                        </a>
+                        <img src="@movie.ImageUrl" class="card-img-top movie-poster" alt="@movie.Title" />
 
                         @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
                         {
-                            <button class="btn-watch position-absolute top-0 end-0 m-2 add-movie-btn"
-                                    data-movie-id="@movie.Id"
-                                    title="Segna come visto">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
+                            if (isWatched)
+                            {
+                                <button class="btn-watch position-absolute top-0 end-0 m-2" disabled title="Già visto">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn-watch position-absolute top-0 end-0 m-2 add-movie-btn"
+                                        type="button"
+                                        data-movie-id="@movie.Id"
+                                        title="Segna come visto"
+                                        onclick="event.stopPropagation();">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            }
                         }
                     </div>
                     <div class="card-body p-2 text-center">
-                        <h6 class="card-title mb-1">@movie.Title</h6>
+                        <h6 class="card-title mb-1 text-truncate">@movie.Title</h6>
                         <small class="text-muted">@movie.Genre • @movie.Year</small>
                     </div>
                 </div>
             </div>
         }
     </div>
+
+    <!-- Più visti in fondo -->
+    <div class="mt-5">
+        <h2 class="matrix-subtitle mb-3">🔥 Più Visti</h2>
+        <div class="scroll-section mb-5">
+            <div class="movie-row">
+                @foreach (var movie in Model.Take(10))
+                {
+                    var isWatched = watchedMovies.Contains(movie.Id);
+                    <div class="movie-card position-relative">
+                        <a asp-controller="Home" asp-action="Dettagli" asp-route-id="@movie.Id">
+                            <img src="@movie.ImageUrl" alt="@movie.Title" class="movie-poster" />
+                        </a>
+
+                        @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
+                        {
+                            if (isWatched)
+                            {
+                                <button class="btn-watch position-absolute top-0 end-0 m-2" disabled title="Già visto">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn-watch position-absolute top-0 end-0 m-2 add-movie-btn"
+                                        type="button"
+                                        data-movie-id="@movie.Id"
+                                        title="Segna come visto">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            }
+                        }
+
+                        <div class="movie-info text-center mt-2">
+                            <h6 class="mb-1 text-truncate">@movie.Title</h6>
+                            <small class="text-muted">@movie.Genre • @movie.Year</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Modale condivisa -->
+<partial name="_AddWatchedModal" />
 
 @section Styles {
     <style>
         body {
-            background-color: #000;
+            background: #000;
             color: #39FF14;
             font-family: 'Share Tech Mono', monospace;
         }
@@ -69,7 +117,27 @@
             text-shadow: 0 0 10px #39FF14;
         }
 
-        /* Sezione scrollabile "Più visti" */
+        .matrix-card {
+            background: #0d0d0d;
+            border: 1px solid #39FF14;
+            transition: transform .2s, box-shadow .3s;
+            cursor: pointer;
+        }
+
+            .matrix-card:hover {
+                transform: scale(1.04);
+                box-shadow: 0 0 15px #39FF14;
+            }
+
+        .movie-poster {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid #39FF14;
+        }
+
+        /* Scroll "più visti" */
         .scroll-section {
             overflow-x: auto;
             white-space: nowrap;
@@ -86,7 +154,7 @@
         .movie-card {
             flex: 0 0 auto;
             width: 200px;
-            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            transition: transform .2s, box-shadow .3s;
             text-align: center;
         }
 
@@ -95,32 +163,19 @@
                 box-shadow: 0 0 15px #39FF14;
             }
 
-        .movie-poster {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 10px;
+        .btn-matrix {
             border: 1px solid #39FF14;
-            transition: transform 0.3s ease;
+            color: #39FF14;
+            background: transparent;
+            transition: all .3s;
         }
 
-            .movie-poster:hover {
-                transform: scale(1.02);
-            }
-
-        .matrix-card {
-            background-color: #0d0d0d;
-            border: 1px solid #39FF14;
-            transition: transform 0.2s ease, box-shadow 0.3s ease;
-        }
-
-            .matrix-card:hover {
-                transform: scale(1.04);
-                box-shadow: 0 0 15px #39FF14;
+            .btn-matrix:hover {
+                background: #39FF14;
+                color: #000;
             }
 
         .btn-watch {
-            background: transparent;
             border: 1px solid #39FF14;
             color: #39FF14;
             border-radius: 50%;
@@ -129,13 +184,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s;
         }
 
             .btn-watch:hover {
                 background: #39FF14;
                 color: #000;
-                box-shadow: 0 0 10px #39FF14;
             }
 
         ::-webkit-scrollbar {
@@ -155,16 +208,40 @@
 
 @section Scripts {
     <script>
-        document.querySelectorAll('.add-movie-btn').forEach(btn => {
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                const movieId = this.getAttribute('data-movie-id');
-                alert('Film ' + movieId + ' aggiunto ai visti!');
-                this.innerHTML = '<i class="bi bi-check-lg"></i>';
-                this.disabled = true;
-                this.style.backgroundColor = '#39FF14';
-                this.style.color = '#000';
+        document.addEventListener('DOMContentLoaded', () => {
+            let selectedMovieId = null;
+            document.querySelectorAll('.add-movie-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectedMovieId = btn.getAttribute('data-movie-id');
+                    document.getElementById('movieId').value = selectedMovieId;
+                    document.getElementById('watchDate').value = new Date().toISOString().split('T')[0];
+                    new bootstrap.Modal(document.getElementById('addWatchedModal')).show();
+                });
             });
+
+            document.getElementById('saveWatchedBtn').addEventListener('click', () => {
+                const id = document.getElementById('movieId').value;
+                const date = document.getElementById('watchDate').value;
+                const comment = document.getElementById('comment').value;
+
+                fetch('@Url.Action("SegnaComeVisto", "Home")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `__RequestVerificationToken=${getToken()}&id=${encodeURIComponent(id)}&watchDate=${encodeURIComponent(date)}&comment=${encodeURIComponent(comment)}`
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) window.location.href = '/Home/Visti';
+                    else alert('Errore: ' + d.message);
+                })
+                .catch(() => alert('Errore di rete'));
+            });
+
+            function getToken(){
+                const el = document.querySelector('input[name="__RequestVerificationToken"]');
+                return el ? el.value : '';
+            }
         });
     </script>
 }

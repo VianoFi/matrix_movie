@@ -1,0 +1,28 @@
+﻿<!-- Modale condivisa per "Aggiungi ai visti" tra home e dettagli -->
+<div class="modal fade" id="addWatchedModal" tabindex="-1" aria-labelledby="addWatchedModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background-color:#0d0d0d; border:1px solid #39FF14; color:#39FF14;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addWatchedModalLabel">🎥 Segna come visto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="watchedForm">
+                    <input type="hidden" id="movieId" />
+                    <div class="mb-3">
+                        <label for="watchDate" class="form-label">Data di visione</label>
+                        <input type="date" id="watchDate" class="form-control bg-dark text-light border-success" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Commento personale</label>
+                        <textarea id="comment" class="form-control bg-dark text-light border-success" rows="3" maxlength="300"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="saveWatchedBtn">💾 Salva</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+            </div>
+        </div>
+    </div>
+</div>
