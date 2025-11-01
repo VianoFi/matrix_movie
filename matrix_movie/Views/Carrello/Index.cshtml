@@ -1,0 +1,139 @@
+﻿@model List<matrix_movie.Models.Movie>
+
+<div class="container mt-5">
+    <h1 class="matrix-title mb-4">🛒 Il tuo carrello (<span id="cart-count">@ViewBag.Count</span>)</h1>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-dark" style="border:1px solid #39FF14; color:#39FF14; background:#000;">
+            Il tuo carrello è vuoto.
+        </div>
+    }
+    else
+    {
+        <table class="table table-dark table-bordered align-middle text-center">
+            <thead style="color:#39FF14;">
+                <tr>
+                    <th>Titolo</th>
+                    <th>Anno</th>
+                    <th>Genere</th>
+                    <th>Prezzo</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var f in Model)
+                {
+                    <tr>
+                        <td>@f.Title</td>
+                        <td>@f.Year</td>
+                        <td>@f.Genre</td>
+                        <td>€7.50</td>
+                        <td>
+                            <form asp-action="Rimuovi" method="post">
+                                <input type="hidden" name="id" value="@f.Id" />
+                                <button class="btn-remove btn-sm">🗑️</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <h4>Totale: <span class="text-total">€@ViewBag.Totale.ToString("0.00")</span></h4>
+
+            <div class="d-flex gap-3">
+                <form asp-action="Svuota" method="post">
+                    <button class="btn-matrix-outline" title="Rimuove tutti i film">🗑️ Svuota</button>
+                </form>
+                <form asp-action="Checkout" method="post">
+                    <button class="btn-matrix-pay" title="Procedi al pagamento">💳 Paga ora</button>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+@section Styles {
+    <style>
+        body {
+            background: #000;
+            color: #39FF14;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .matrix-title {
+            color: #39FF14;
+            text-shadow: 0 0 10px #39FF14;
+        }
+
+        .text-total {
+            color: #39FF14;
+            text-shadow: 0 0 8px #39FF14;
+        }
+
+        /* Pulsanti principali */
+        .btn-matrix-outline {
+            border: 1px solid #39FF14;
+            color: #39FF14;
+            background: transparent;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+            .btn-matrix-outline:hover {
+                background: #39FF14;
+                color: #000;
+                box-shadow: 0 0 15px #39FF14;
+            }
+
+        .btn-matrix-pay {
+            border: none;
+            background: linear-gradient(90deg, #39FF14, #00cc66);
+            color: #000;
+            font-weight: bold;
+            padding: 10px 24px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+            .btn-matrix-pay:hover {
+                transform: scale(1.05);
+                box-shadow: 0 0 20px #39FF14;
+            }
+
+        /* Pulsante rimozione singolo elemento */
+        .btn-remove {
+            border: 1px solid #ff4040;
+            color: #ff4040;
+            background: transparent;
+            border-radius: 6px;
+            padding: 5px 10px;
+            transition: all 0.3s ease;
+        }
+
+            .btn-remove:hover {
+                background: #ff4040;
+                color: #000;
+                box-shadow: 0 0 10px #ff4040;
+            }
+
+        /* Tabella */
+        .table {
+            border-color: #39FF14 !important;
+            box-shadow: 0 0 15px #39FF14;
+        }
+
+        th {
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+        }
+    </style>
+}

@@ -20,7 +20,7 @@
             <h5>Trama</h5>
             <p>@Model.Plot</p>
 
-            <div class="mt-4 d-flex gap-2">
+            <div class="mt-4 d-flex flex-wrap gap-2">
                 <a asp-controller="Home" asp-action="Index" class="btn-matrix">⬅ Torna ai film</a>
 
                 @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
@@ -38,6 +38,12 @@
                             ➕ Aggiungi ai visti
                         </button>
                     }
+
+                    <button class="btn-matrix cart" id="addCartBtn"
+                            type="button"
+                            data-movie-id="@Model.Id">
+                        🛒 Aggiungi al carrello
+                    </button>
                 }
             </div>
         </div>
@@ -101,7 +107,6 @@
             color: #39FF14;
             background: transparent;
             padding: 10px 20px;
-            text-transform: uppercase;
             border-radius: 8px;
             transition: all .3s;
             text-decoration: none;
@@ -113,7 +118,6 @@
                 box-shadow: 0 0 10px #39FF14;
             }
 
-            /* Pulsante "Già visto" */
             .btn-matrix.watched {
                 border-color: #888;
                 color: #888;
@@ -122,17 +126,17 @@
                 box-shadow: none;
             }
 
-            /* Pulsante "Aggiungi ai visti" */
-            .btn-matrix.add {
-                border-color: #39FF14;
-                color: #39FF14;
+            .btn-matrix.add:hover {
+                background: #39FF14;
+                color: #000;
+                box-shadow: 0 0 12px #39FF14;
             }
 
-                .btn-matrix.add:hover {
-                    background: #39FF14;
-                    color: #000;
-                    box-shadow: 0 0 12px #39FF14;
-                }
+            .btn-matrix.cart:hover {
+                background: #39FF14;
+                color: #000;
+                box-shadow: 0 0 12px #39FF14;
+            }
     </style>
 }
 
@@ -148,6 +152,7 @@
                 });
             }
 
+            // Salva film visto
             document.getElementById('saveWatchedBtn').addEventListener('click', () => {
                 const movieId = document.getElementById('addWatchedBtn')?.getAttribute('data-movie-id');
                 const date = document.getElementById('watchDate').value;
@@ -172,6 +177,27 @@
                 })
                 .catch(() => alert('❌ Errore di rete'));
             });
+
+            // Aggiungi al carrello
+            const addCartBtn = document.getElementById('addCartBtn');
+            if (addCartBtn) {
+                addCartBtn.addEventListener('click', () => {
+                    const id = addCartBtn.getAttribute('data-movie-id');
+                    fetch('/Carrello/Aggiungi', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'id=' + encodeURIComponent(id)
+                    })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.success) {
+                            document.getElementById('cart-count').textContent = d.count;
+                            addCartBtn.textContent = '✔️ Aggiunto';
+                            addCartBtn.disabled = true;
+                        }
+                    });
+                });
+            }
         });
     </script>
 }
