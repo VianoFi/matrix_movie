@@ -3,37 +3,51 @@
     ViewData["Title"] = "Home";
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Film Disponibili</h1>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
-        @if (User.IsInRole("Admin"))
-        {
-            <a asp-controller="Admin" asp-action="AddMovie" class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> Aggiungi Film
-            </a>
-        }
+<div class="container mt-4">
+    <!-- Sezione scorrevole Più Visti -->
+    <h2 class="matrix-subtitle mb-3">🔥 Più Visti</h2>
+    <div class="scroll-section mb-5">
+        <div class="movie-row">
+            @foreach (var movie in Model.Take(10))
+            {
+                <div class="movie-card">
+                    <a asp-controller="Home" asp-action="Dettagli" asp-route-id="@movie.Id">
+                        <img src="@movie.ImageUrl" alt="@movie.Title" class="movie-poster" />
+                    </a>
+                    <div class="movie-info text-center mt-2">
+                        <h6>@movie.Title</h6>
+                        <small>@movie.Genre • @movie.Year</small>
+                    </div>
+                </div>
+            }
+        </div>
     </div>
 
+    <!-- Griglia completa dei film -->
+    <h2 class="matrix-subtitle mb-3">🎬 Tutti i Film</h2>
     <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-4">
         @foreach (var movie in Model)
         {
             <div class="col">
-                <div class="card h-100 movie-card" onclick="location.href='@Url.Action("Dettagli", "Home", new { id = movie.Id })'">
+                <div class="card h-100 matrix-card">
                     <div class="position-relative">
-                        <img src="@movie.ImageUrl" class="card-img-top" alt="@movie.Title" />
+                        <a asp-controller="Home" asp-action="Dettagli" asp-route-id="@movie.Id">
+                            <img src="@movie.ImageUrl" class="card-img-top movie-poster" alt="@movie.Title" />
+                        </a>
 
                         @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
                         {
-                            <button class="btn btn-primary btn-sm position-absolute top-0 end-0 m-2 add-movie-btn"
+                            <button class="btn-watch position-absolute top-0 end-0 m-2 add-movie-btn"
                                     data-movie-id="@movie.Id"
                                     title="Segna come visto">
                                 <i class="bi bi-plus-lg"></i>
                             </button>
                         }
                     </div>
-                    <div class="card-body p-2">
-                        <h6 class="card-title mb-1 text-truncate">@movie.Title</h6>
+                    <div class="card-body p-2 text-center">
+                        <h6 class="card-title mb-1">@movie.Title</h6>
                         <small class="text-muted">@movie.Genre • @movie.Year</small>
                     </div>
                 </div>
@@ -44,34 +58,97 @@
 
 @section Styles {
     <style>
+        body {
+            background-color: #000;
+            color: #39FF14;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .matrix-subtitle {
+            color: #39FF14;
+            text-shadow: 0 0 10px #39FF14;
+        }
+
+        /* Sezione scrollabile "Più visti" */
+        .scroll-section {
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: thin;
+            scrollbar-color: #39FF14 #111;
+        }
+
+        .movie-row {
+            display: flex;
+            gap: 15px;
+            padding-bottom: 5px;
+        }
+
         .movie-card {
-            transition: transform 0.2s;
-            cursor: pointer;
+            flex: 0 0 auto;
+            width: 200px;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            text-align: center;
         }
 
             .movie-card:hover {
                 transform: scale(1.05);
-                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                box-shadow: 0 0 15px #39FF14;
             }
 
-            .movie-card img {
-                height: 300px;
-                object-fit: cover;
-            }
-
-        .add-movie-btn {
-            opacity: 0;
-            transition: opacity 0.2s;
+        .movie-poster {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid #39FF14;
+            transition: transform 0.3s ease;
         }
 
-        .movie-card:hover .add-movie-btn {
-            opacity: 1;
+            .movie-poster:hover {
+                transform: scale(1.02);
+            }
+
+        .matrix-card {
+            background-color: #0d0d0d;
+            border: 1px solid #39FF14;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
         }
 
-        @@media (max-width: 768px) {
-            .movie-card img {
-                height: 200px;
+            .matrix-card:hover {
+                transform: scale(1.04);
+                box-shadow: 0 0 15px #39FF14;
             }
+
+        .btn-watch {
+            background: transparent;
+            border: 1px solid #39FF14;
+            color: #39FF14;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+            .btn-watch:hover {
+                background: #39FF14;
+                color: #000;
+                box-shadow: 0 0 10px #39FF14;
+            }
+
+        ::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #39FF14;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111;
         }
     </style>
 }
@@ -82,13 +159,11 @@
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 const movieId = this.getAttribute('data-movie-id');
-
-                // Azione simulata
                 alert('Film ' + movieId + ' aggiunto ai visti!');
                 this.innerHTML = '<i class="bi bi-check-lg"></i>';
-                this.classList.remove('btn-primary');
-                this.classList.add('btn-success');
                 this.disabled = true;
+                this.style.backgroundColor = '#39FF14';
+                this.style.color = '#000';
             });
         });
     </script>
