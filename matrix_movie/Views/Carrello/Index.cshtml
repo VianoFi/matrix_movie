@@ -45,9 +45,11 @@
 
             <div class="d-flex gap-3">
                 <form asp-action="Svuota" method="post">
+                    @Html.AntiForgeryToken()
                     <button class="btn-matrix-outline" title="Rimuove tutti i film">🗑️ Svuota</button>
                 </form>
                 <form asp-action="Checkout" method="post">
+                    @Html.AntiForgeryToken()
                     <button class="btn-matrix-pay" title="Procedi al pagamento">💳 Paga ora</button>
                 </form>
             </div>

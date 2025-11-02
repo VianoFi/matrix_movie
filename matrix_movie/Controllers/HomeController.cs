@@ -21,7 +21,7 @@ namespace matrix_movie.Controllers
             _userManager = userManager;
         }
 
-        // ✅ INDEX: carica film + generi
+        // INDEX: carica film + generi
         public IActionResult Index()
         {
             CaricaGeneri();
@@ -46,11 +46,17 @@ namespace matrix_movie.Controllers
             return View(movies);
         }
 
-        // ✅ SEARCH: gestisce ricerca + filtro + generi dinamici
+        // SEARCH: gestisce ricerca + filtro + generi dinamici
         [HttpGet]
         public IActionResult Search(string? query, string? genre = "Tutti")
         {
             CaricaGeneri();
+
+            if (!string.IsNullOrWhiteSpace(query) && query.Length > 200)
+            {
+                ModelState.AddModelError("", "Query di ricerca troppo lunga");
+                return View("Index", new List<Movie>());
+            }
 
             var moviesQ = _context.Movies.AsQueryable();
 
@@ -87,7 +93,7 @@ namespace matrix_movie.Controllers
             return View("Index", movies);
         }
 
-        // ✅ Caricamento dinamico dei generi dal DB
+        // Caricamento dinamico dei generi dal DB
         private void CaricaGeneri()
         {
             var generi = _context.Movies
@@ -117,7 +123,6 @@ namespace matrix_movie.Controllers
             return View(movie);
         }
 
-
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -125,7 +130,6 @@ namespace matrix_movie.Controllers
         {
             try
             {
-                // Ottieni l'ID GUID dell'utente autenticato
                 var userId = _userManager.GetUserId(User);
 
                 if (string.IsNullOrEmpty(userId))
@@ -134,7 +138,6 @@ namespace matrix_movie.Controllers
                     return RedirectToAction("Visti");
                 }
 
-                // Trova il record corrispondente
                 var visto = _context.UserMovies
                     .FirstOrDefault(um => um.MovieId == id && um.UserId == userId);
 
@@ -144,7 +147,6 @@ namespace matrix_movie.Controllers
                     return RedirectToAction("Visti");
                 }
 
-                // Elimina il record e salva
                 _context.UserMovies.Remove(visto);
                 _context.SaveChanges();
 
@@ -157,9 +159,6 @@ namespace matrix_movie.Controllers
                 return RedirectToAction("Visti");
             }
         }
-
-
-
 
         [Authorize]
         [HttpPost]
@@ -203,8 +202,4 @@ namespace matrix_movie.Controllers
         public IActionResult Error() =>
             View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
-
-
-
-
 }
