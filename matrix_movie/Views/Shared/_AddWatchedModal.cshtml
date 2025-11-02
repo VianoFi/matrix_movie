@@ -1,28 +1,77 @@
-﻿<!-- Modale condivisa per "Aggiungi ai visti" tra home e dettagli -->
+﻿@{
+    Layout = null;
+}
+
 <div class="modal fade" id="addWatchedModal" tabindex="-1" aria-labelledby="addWatchedModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content" style="background-color:#0d0d0d; border:1px solid #39FF14; color:#39FF14;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content matrix-modal">
             <div class="modal-header">
-                <h5 class="modal-title" id="addWatchedModalLabel">🎥 Segna come visto</h5>
+                <h5 class="modal-title" id="addWatchedModalLabel">Segna come visto</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
             </div>
             <div class="modal-body">
-                <form id="watchedForm">
-                    <input type="hidden" id="movieId" />
-                    <div class="mb-3">
-                        <label for="watchDate" class="form-label">Data di visione</label>
-                        <input type="date" id="watchDate" class="form-control bg-dark text-light border-success" />
-                    </div>
-                    <div class="mb-3">
-                        <label for="comment" class="form-label">Commento personale</label>
-                        <textarea id="comment" class="form-control bg-dark text-light border-success" rows="3" maxlength="300"></textarea>
-                    </div>
-                </form>
+                <input type="hidden" id="movieId" />
+                <div class="mb-3">
+                    <label for="watchDate" class="form-label">Data di visione</label>
+                    <input type="date" class="form-control" id="watchDate" />
+                </div>
+                <div class="mb-3">
+                    <label for="comment" class="form-label">Commento</label>
+                    <textarea class="form-control" id="comment" rows="3" placeholder="Scrivi un commento..."></textarea>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-success" id="saveWatchedBtn">💾 Salva</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" id="saveWatchedBtn" class="btn btn-success matrix-btn">Salva</button>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .matrix-modal {
+        background-color: #000;
+        color: #39FF14;
+        border: 1px solid #39FF14;
+        text-shadow: 0 0 10px #39FF14;
+    }
+
+    .form-control {
+        background: #000;
+        color: #39FF14;
+        border: 1px solid #39FF14;
+    }
+
+        .form-control:focus {
+            background: #000;
+            color: #39FF14;
+            box-shadow: 0 0 8px #39FF14;
+        }
+
+    .btn-secondary {
+        background: transparent;
+        border: 1px solid #39FF14;
+        color: #39FF14;
+        transition: all .3s ease;
+    }
+
+        .btn-secondary:hover {
+            background: #39FF14;
+            color: #000;
+            box-shadow: 0 0 10px #39FF14;
+        }
+
+    .btn-success.matrix-btn {
+        background: #39FF14;
+        color: #000;
+        border: none;
+        font-weight: bold;
+        text-transform: uppercase;
+        transition: all .3s ease;
+    }
+
+        .btn-success.matrix-btn:hover {
+            background: #00cc00;
+            box-shadow: 0 0 12px #39FF14;
+        }
+</style>

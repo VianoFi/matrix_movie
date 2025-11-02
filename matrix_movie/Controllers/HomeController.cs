@@ -21,8 +21,11 @@ namespace matrix_movie.Controllers
             _userManager = userManager;
         }
 
+        // ✅ INDEX: carica film + generi
         public IActionResult Index()
         {
+            CaricaGeneri();
+
             var movies = _context.Movies.ToList();
 
             if (User.Identity?.IsAuthenticated ?? false)
@@ -43,9 +46,12 @@ namespace matrix_movie.Controllers
             return View(movies);
         }
 
+        // ✅ SEARCH: gestisce ricerca + filtro + generi dinamici
         [HttpGet]
         public IActionResult Search(string? query, string? genre = "Tutti")
         {
+            CaricaGeneri();
+
             var moviesQ = _context.Movies.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(query))
@@ -81,8 +87,23 @@ namespace matrix_movie.Controllers
             return View("Index", movies);
         }
 
+        // ✅ Caricamento dinamico dei generi dal DB
+        private void CaricaGeneri()
+        {
+            var generi = _context.Movies
+                .Select(m => m.Genre)
+                .Where(g => g != null && g.Trim() != "")
+                .Distinct()
+                .OrderBy(g => g)
+                .ToList();
+
+            ViewBag.Generi = generi;
+        }
+
         public IActionResult Dettagli(int id)
         {
+            CaricaGeneri();
+
             var movie = _context.Movies.FirstOrDefault(m => m.Id == id);
             if (movie == null) return NotFound();
 
@@ -95,6 +116,50 @@ namespace matrix_movie.Controllers
 
             return View(movie);
         }
+
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EliminaVisto(int id)
+        {
+            try
+            {
+                // Ottieni l'ID GUID dell'utente autenticato
+                var userId = _userManager.GetUserId(User);
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    _logger.LogWarning("Utente non autenticato durante l'eliminazione.");
+                    return RedirectToAction("Visti");
+                }
+
+                // Trova il record corrispondente
+                var visto = _context.UserMovies
+                    .FirstOrDefault(um => um.MovieId == id && um.UserId == userId);
+
+                if (visto == null)
+                {
+                    _logger.LogWarning($"Nessun record trovato per UserId={userId} e MovieId={id}");
+                    return RedirectToAction("Visti");
+                }
+
+                // Elimina il record e salva
+                _context.UserMovies.Remove(visto);
+                _context.SaveChanges();
+
+                _logger.LogInformation($"Film con ID {id} eliminato dai visti per utente {userId}.");
+                return RedirectToAction("Visti");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Errore durante l'eliminazione del film visto.");
+                return RedirectToAction("Visti");
+            }
+        }
+
+
+
 
         [Authorize]
         [HttpPost]
@@ -123,6 +188,8 @@ namespace matrix_movie.Controllers
         [Authorize]
         public IActionResult Visti()
         {
+            CaricaGeneri();
+
             var userId = _userManager.GetUserId(User);
             var list = _context.UserMovies
                 .Include(um => um.Movie)
@@ -136,4 +203,8 @@ namespace matrix_movie.Controllers
         public IActionResult Error() =>
             View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
+
+
+
+
 }

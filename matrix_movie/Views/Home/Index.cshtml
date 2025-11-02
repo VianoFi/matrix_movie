@@ -5,6 +5,12 @@
 }
 
 <div class="container mt-4">
+    <!-- Token antifalsificazione -->
+    <form id="af-token-form" style="display:none;">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <!-- Pulsante Gestione Film (solo Admin) -->
     @if (User.IsInRole("Admin"))
     {
         <div class="text-end mb-4">
@@ -12,6 +18,7 @@
         </div>
     }
 
+    <!-- Nessun risultato -->
     @if (ViewBag.IsSearch == true && !Model.Any())
     {
         <div class="text-center mt-5 matrix-empty">
@@ -23,6 +30,7 @@
         </div>
     }
 
+    <!-- Elenco Film -->
     <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-4">
         @foreach (var movie in Model)
         {
@@ -34,21 +42,27 @@
                         <img src="@movie.ImageUrl" class="card-img-top movie-poster" alt="@movie.Title" />
                         @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
                         {
-                            if (isWatched)
+                            <!-- Pulsante Aggiungi ai visti -->
+                            @if (isWatched)
                             {
-                                <button class="btn-watch position-absolute top-0 end-0 m-2" disabled><i class="bi bi-check-lg"></i></button>
+                                <button class="btn-watch position-absolute top-0 end-0 m-2" disabled>
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
                             }
                             else
                             {
-
                                 <button class="btn-watch position-absolute top-0 end-0 m-2 add-movie-btn"
-                                          type="button" data-movie-id="@movie.Id">
+                                        type="button" data-movie-id="@movie.Id"
+                                        onclick="event.stopPropagation();">
                                     <i class="bi bi-plus-lg"></i>
                                 </button>
-                                ;
                             }
+
+                            <!-- Pulsante Aggiungi al carrello -->
                             <button class="btn-cart position-absolute top-0 start-0 m-2 add-cart-btn"
-                                    type="button" data-movie-id="@movie.Id">
+                                    type="button" data-movie-id="@movie.Id"
+                                    title="Aggiungi al carrello"
+                                    onclick="event.stopPropagation();">
                                 🛒
                             </button>
                         }
@@ -62,6 +76,7 @@
         }
     </div>
 
+    <!-- Sezione Più Visti -->
     @if (ViewBag.IsSearch != true && Model.Any())
     {
         <div class="mt-5">
@@ -86,6 +101,7 @@
     }
 </div>
 
+<!-- Modale condivisa -->
 <partial name="_AddWatchedModal" />
 
 @section Styles {
@@ -93,7 +109,7 @@
         body {
             background: #000;
             color: #39FF14;
-            font-family: 'Share Tech Mono',monospace;
+            font-family: 'Share Tech Mono', monospace;
         }
 
         .matrix-card {
@@ -123,6 +139,10 @@
             border-radius: 50%;
             width: 30px;
             height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: .3s;
         }
 
             .btn-cart:hover, .btn-watch:hover {
@@ -178,14 +198,90 @@
             display: inline-block;
         }
 
-            .btn-matrix-admin:hover,
-            .btn-matrix-admin:focus,
-            .btn-matrix-admin:active {
+            .btn-matrix-admin:hover {
                 background: #39FF14 !important;
                 color: #000 !important;
                 box-shadow: 0 0 12px #39FF14;
                 text-decoration: none !important;
-                outline: none !important;
             }
     </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- Ottiene il token antiforgery ---
+            function getToken() {
+                const el = document.querySelector('#af-token-form input[name="__RequestVerificationToken"]');
+                return el ? el.value : '';
+            }
+
+            // --- Aggiungi al carrello ---
+            document.querySelectorAll('.add-cart-btn').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const id = btn.getAttribute('data-movie-id');
+
+                    fetch('/Carrello/Aggiungi', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'id=' + encodeURIComponent(id)
+                    })
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.success) {
+                                document.getElementById('cart-count').textContent = d.count;
+                                btn.innerHTML = '✔️';
+                                btn.disabled = true;
+                            }
+                        })
+                        .catch(() => console.error('Errore nel caricamento del carrello'));
+                });
+            });
+
+            // --- Aggiungi ai visti (apre modale) ---
+            document.querySelectorAll('.add-movie-btn').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const id = btn.getAttribute('data-movie-id');
+                    document.getElementById('movieId').value = id;
+                    document.getElementById('watchDate').value = new Date().toISOString().split('T')[0];
+                    new bootstrap.Modal(document.getElementById('addWatchedModal')).show();
+                });
+            });
+
+            // --- Salva film visto ---
+            const saveBtn = document.getElementById('saveWatchedBtn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    const id = document.getElementById('movieId').value;
+                    const date = document.getElementById('watchDate').value;
+                    const comment = document.getElementById('comment').value;
+                    const token = getToken();
+
+                    fetch('/Home/SegnaComeVisto', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `__RequestVerificationToken=${encodeURIComponent(token)}&id=${encodeURIComponent(id)}&watchDate=${encodeURIComponent(date)}&comment=${encodeURIComponent(comment)}`
+                    })
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.success) {
+                                const btn = document.querySelector(`.add-movie-btn[data-movie-id="${id}"]`);
+                                if (btn) {
+                                    btn.innerHTML = '✔️';
+                                    btn.disabled = true;
+                                }
+                                bootstrap.Modal.getInstance(document.getElementById('addWatchedModal')).hide();
+                                window.location.href = 'Home/Visti'
+                            } else {
+                                alert('Errore: ' + (d.message || 'Impossibile aggiungere ai visti.'));
+                            }
+                        })
+                        .catch(() => alert('Errore di rete o token mancante.'));
+                });
+            }
+        });
+    </script>
 }

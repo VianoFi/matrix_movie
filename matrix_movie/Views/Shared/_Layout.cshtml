@@ -1,13 +1,9 @@
-﻿@using matrix_movie.Data
-@inject ApplicationDbContext Db
-
-@{
-    var userName = User.Identity.IsAuthenticated ? User.Identity.Name.Split('@')[0] : "";
-    var genres = Db.Movies.Select(m => m.Genre).Distinct().OrderBy(g => g).ToList();
-    var currentQuery = Context.Request.Query["query"].ToString();
-    var currentGenre = Context.Request.Query["genre"].ToString();
-    if (string.IsNullOrEmpty(currentGenre)) currentGenre = "Tutti";
+﻿@{
+    var userName = User.Identity.IsAuthenticated
+        ? User.Identity.Name.Split('@')[0]
+        : "";
 }
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -15,39 +11,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - MatrixMovie</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    @await RenderSectionAsync("Styles", false)
+    @await RenderSectionAsync("Styles", required: false)
 </head>
-<body style="background:#000;color:#39FF14;font-family:'Share Tech Mono',monospace">
+<body>
     <header>
         <nav class="navbar navbar-expand-sm matrix-navbar border-bottom box-shadow mb-3">
             <div class="container">
                 <a class="navbar-brand d-flex align-items-center" asp-controller="Home" asp-action="Index">
-                    <img src="~/images/logo.png" alt="MatrixMovie" style="height:40px;" />
+                    <img src="~/images/logo.png" alt="MatrixMovie" style="height:40px; width:auto;" />
                 </a>
 
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between align-items-center">
                     <ul class="navbar-nav flex-grow-1 align-items-center">
-                        <li class="nav-item me-3"><a class="nav-link matrix-link" asp-controller="Home" asp-action="Index">HOME</a></li>
+                        <li class="nav-item me-3">
+                            <a class="nav-link matrix-link" asp-controller="Home" asp-action="Index">HOME</a>
+                        </li>
+
                         @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
                         {
-                            <li class="nav-item ms-2"><a class="nav-link matrix-link" asp-controller="Home" asp-action="Visti">I TUOI FILM</a></li>
-                        }
-                    </ul>
+                            <li class="nav-item ms-2">
+                                <a class="nav-link matrix-link" asp-controller="Home" asp-action="Visti">I TUOI FILM</a>
+                            </li>
 
-                    <form class="d-flex align-items-center me-3" asp-controller="Home" asp-action="Search" method="get">
-                        <input name="query" class="form-control matrix-search-input me-2"
-                               placeholder="Cerca film..." value="@currentQuery" />
-                        <select name="genre" class="form-select matrix-search-select me-2">
-                            <option value="Tutti" selected="@(currentGenre == "Tutti")">Tutti</option>
-                            @foreach (var g in genres)
-                            {
-                                <option value="@g" selected="@(currentGenre == g)">@g</option>
-                            }
-                        </select>
-                        <button type="submit" class="btn-matrix"><i class="bi bi-search"></i></button>
-                    </form>
+                            <!-- 🛒 Carrello con contatore -->
+                            <li class="nav-item ms-3 position-relative">
+                                <a class="nav-link matrix-link position-relative" asp-controller="Carrello" asp-action="Index">
+                                    🛒
+                                    <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
+                                        @(Context.Session.GetObjectFromJson<List<int>>("Carrello")?.Count ?? 0)
+                                    </span>
+                                </a>
+                            </li>
+                        }
+
+                        <!-- 🔍 Barra di ricerca dinamica -->
+                        <li class="nav-item ms-4 flex-grow-1">
+                            <form class="d-flex" asp-controller="Home" asp-action="Search" method="get">
+                                <input type="text" name="query" class="form-control matrix-search me-2" placeholder="Cerca film..." />
+                                <select name="genre" class="form-select matrix-select me-2">
+                                    <option value="Tutti">Tutti</option>
+                                    @if (ViewBag.Generi != null)
+                                    {
+                                        foreach (var g in (List<string>)ViewBag.Generi)
+                                        {
+                                            <option value="@g">@g</option>
+                                        }
+                                    }
+                                </select>
+                                <button class="btn-matrix-search" type="submit"><i class="bi bi-search"></i></button>
+                            </form>
+                        </li>
+                    </ul>
 
                     <ul class="navbar-nav">
                         @if (User.Identity.IsAuthenticated)
@@ -81,18 +102,37 @@
                             </li>
                         }
                     </ul>
-
                 </div>
             </div>
         </nav>
     </header>
 
-    <div class="container"><main role="main">@RenderBody()</main></div>
-    <footer class="matrix-footer mt-3 text-center border-top pt-2">&copy; @DateTime.Now.Year - MatrixMovie</footer>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="matrix-footer mt-3">
+        <div class="container">
+            &copy; @DateTime.Now.Year - MatrixMovie
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @RenderSection("Scripts", required: false)
 
     <style>
+        body {
+            background-color: #000;
+            color: #39FF14;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
         .matrix-navbar {
-            background: #000;
+            background-color: #000 !important;
             border-bottom: 1px solid #39FF14;
             box-shadow: 0 0 15px #39FF14;
         }
@@ -100,67 +140,92 @@
         .matrix-link {
             color: #39FF14 !important;
             text-shadow: 0 0 10px #39FF14;
-            transition: .3s;
+            transition: all 0.3s ease;
+            padding: 8px 14px !important;
+            border-radius: 6px;
         }
 
             .matrix-link:hover {
+                color: #000 !important;
                 background: #39FF14;
-                color: #000 !important;
                 box-shadow: 0 0 12px #39FF14;
             }
-
-        .matrix-search-input, .matrix-search-select {
-            background: #000 !important;
-            color: #39FF14 !important;
-            border: 1px solid #39FF14 !important;
-            border-radius: 6px;
-        }
-
-            .matrix-search-input:focus, .matrix-search-select:focus {
-                box-shadow: 0 0 10px #39FF14 !important;
-            }
-
-        .btn-matrix {
-            border: 1px solid #39FF14;
-            color: #39FF14;
-            background: transparent !important;
-            border-radius: 6px;
-        }
-
-            .btn-matrix:hover {
-                background: #39FF14 !important;
-                color: #000 !important;
-                box-shadow: 0 0 12px #39FF14;
-            }
-
-
 
         .matrix-user {
             color: #39FF14;
-            font-weight: 500;
-            text-shadow: 0 0 8px #39FF14;
         }
 
         .matrix-admin {
-            color: #ff4040 !important;
+            color: #ff4040;
             font-weight: bold;
             text-shadow: 0 0 8px #ff4040;
         }
 
         .matrix-client {
-            color: #39FF14 !important;
+            color: #39FF14;
             font-weight: bold;
             text-shadow: 0 0 8px #39FF14;
         }
 
-
         .matrix-footer {
+            background-color: #000;
+            border-top: 1px solid #39FF14;
             color: #39FF14;
+            text-align: center;
+            padding: 10px 0;
             text-shadow: 0 0 10px #39FF14;
         }
-    </style>
 
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    @RenderSection("Scripts", false)
+        /* 🔍 Ricerca */
+        .matrix-search {
+            background: #000;
+            color: #39FF14;
+            border: 1px solid #39FF14;
+        }
+
+            .matrix-search:focus {
+                background: #000;
+                color: #39FF14;
+                box-shadow: 0 0 8px #39FF14;
+            }
+
+        .matrix-select {
+            background: #000;
+            color: #39FF14;
+            border: 1px solid #39FF14;
+        }
+
+            .matrix-select:focus {
+                background: #000;
+                color: #39FF14;
+                box-shadow: 0 0 8px #39FF14;
+            }
+
+            .matrix-select option {
+                background-color: #000;
+                color: #39FF14;
+            }
+
+        .btn-matrix-search {
+            border: 1px solid #39FF14;
+            color: #39FF14;
+            background: transparent;
+            border-radius: 6px;
+            transition: all .3s;
+            padding: 5px 10px;
+        }
+
+            .btn-matrix-search:hover {
+                background: #39FF14;
+                color: #000;
+                box-shadow: 0 0 10px #39FF14;
+            }
+
+        .badge.bg-success {
+            background-color: #39FF14 !important;
+            color: #000;
+            font-weight: bold;
+        }
+    </style>
 </body>
 </html>
