@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = Model.Title;
 }
+@Html.AntiForgeryToken()
 
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
@@ -33,8 +34,7 @@
                     {
                         <button class="btn-matrix add" id="addWatchedBtn"
                                 type="button"
-                                data-movie-id="@Model.Id"
-                                data-movie-title="@Model.Title">
+                                data-movie-id="@Model.Id">
                             ➕ Aggiungi ai visti
                         </button>
                     }
@@ -59,16 +59,15 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
             </div>
             <div class="modal-body">
-                <form id="watchedForm">
-                    <div class="mb-3">
-                        <label for="watchDate" class="form-label">Data di visione</label>
-                        <input type="date" id="watchDate" class="form-control bg-dark text-light border-success" />
-                    </div>
-                    <div class="mb-3">
-                        <label for="comment" class="form-label">Commento personale</label>
-                        <textarea id="comment" class="form-control bg-dark text-light border-success" rows="3" maxlength="300"></textarea>
-                    </div>
-                </form>
+                <input type="hidden" id="movieId" value="@Model.Id" />
+                <div class="mb-3">
+                    <label for="watchDate" class="form-label">Data di visione</label>
+                    <input type="date" id="watchDate" class="form-control bg-dark text-light border-success" />
+                </div>
+                <div class="mb-3">
+                    <label for="comment" class="form-label">Commento personale</label>
+                    <textarea id="comment" class="form-control bg-dark text-light border-success" rows="3" maxlength="300"></textarea>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-success" id="saveWatchedBtn">💾 Salva</button>
@@ -125,18 +124,6 @@
                 cursor: not-allowed;
                 box-shadow: none;
             }
-
-            .btn-matrix.add:hover {
-                background: #39FF14;
-                color: #000;
-                box-shadow: 0 0 12px #39FF14;
-            }
-
-            .btn-matrix.cart:hover {
-                background: #39FF14;
-                color: #000;
-                box-shadow: 0 0 12px #39FF14;
-            }
     </style>
 }
 
@@ -144,6 +131,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const addBtn = document.getElementById('addWatchedBtn');
+            const saveBtn = document.getElementById('saveWatchedBtn');
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
             if (addBtn) {
                 addBtn.addEventListener('click', () => {
                     const dateInput = document.getElementById('watchDate');
@@ -152,33 +142,30 @@
                 });
             }
 
-            // Salva film visto
-            document.getElementById('saveWatchedBtn').addEventListener('click', () => {
-                const movieId = document.getElementById('addWatchedBtn')?.getAttribute('data-movie-id');
-                const date = document.getElementById('watchDate').value;
-                const comment = document.getElementById('comment').value;
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    const id = document.getElementById('movieId').value;
+                    const date = document.getElementById('watchDate').value;
+                    const comment = document.getElementById('comment').value;
 
-                if (!movieId) return;
+                    fetch('@Url.Action("SegnaComeVisto", "Home")', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `__RequestVerificationToken=${encodeURIComponent(token)}&id=${encodeURIComponent(id)}&watchDate=${encodeURIComponent(date)}&comment=${encodeURIComponent(comment)}`
+                    })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.success) {
+                            bootstrap.Modal.getInstance(document.getElementById('addWatchedModal')).hide();
+                            window.location.href = '/Home/Visti';
+                        } else {
+                            alert('❌ Errore: ' + (d.message || 'Salvataggio non riuscito.'));
+                        }
+                    })
+                    .catch(() => alert('❌ Errore di rete — token mancante o richiesta rifiutata.'));
+                });
+            }
 
-                fetch('@Url.Action("SegnaComeVisto", "Home")', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `id=${encodeURIComponent(movieId)}&watchDate=${encodeURIComponent(date)}&comment=${encodeURIComponent(comment)}`
-                })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.success) {
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('addWatchedModal'));
-                        if (modal) modal.hide();
-                        window.location.href = '/Home/Visti';
-                    } else {
-                        alert('❌ Errore: ' + (d.message || 'salvataggio non riuscito'));
-                    }
-                })
-                .catch(() => alert('❌ Errore di rete'));
-            });
-
-            // Aggiungi al carrello
             const addCartBtn = document.getElementById('addCartBtn');
             if (addCartBtn) {
                 addCartBtn.addEventListener('click', () => {

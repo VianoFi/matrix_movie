@@ -41,7 +41,7 @@
                         <div class="card-footer p-2 d-flex justify-content-between">
                             <form asp-action="EliminaVisto" method="post" class="m-0">
                                 @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@item.Id" />
+                                <input type="hidden" name="id" value="@item.Movie.Id" />
                                 <button type="submit" class="btn-matrix btn-sm">🗑️</button>
                             </form>
 

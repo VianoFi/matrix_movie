@@ -21,22 +21,32 @@ namespace matrix_movie.Controllers
             _userManager = userManager;
         }
 
+        // Mostra il carrello con totale e conteggio
         public IActionResult Index()
         {
             var carrello = HttpContext.Session.GetObjectFromJson<List<int>>("Carrello") ?? new List<int>();
             var films = _context.Movies.Where(m => carrello.Contains(m.Id)).ToList();
+
             ViewBag.Totale = films.Count * PrezzoUnitario;
             ViewBag.Count = carrello.Count;
+
             return View(films);
         }
 
+        // Permette di aggiungere al carrello anche via fetch senza problemi di redirect
+        [AllowAnonymous]
         [HttpPost]
         public IActionResult Aggiungi(int id)
         {
+            // Se la sessione non esiste, la inizializza
             var carrello = HttpContext.Session.GetObjectFromJson<List<int>>("Carrello") ?? new List<int>();
+
             if (!carrello.Contains(id))
                 carrello.Add(id);
+
             HttpContext.Session.SetObjectAsJson("Carrello", carrello);
+
+            // Risposta JSON compatibile col bottone 🛒
             return Json(new { success = true, count = carrello.Count });
         }
 
@@ -56,6 +66,7 @@ namespace matrix_movie.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Stripe Checkout
         [HttpPost]
         public IActionResult Checkout()
         {
@@ -89,6 +100,7 @@ namespace matrix_movie.Controllers
             return Redirect(session.Url);
         }
 
+        // Dopo il pagamento: svuota il carrello
         public IActionResult Conferma()
         {
             HttpContext.Session.Remove("Carrello");

@@ -1,21 +1,56 @@
 ﻿@page
 @model LogoutModel
 @{
-    ViewData["Title"] = "Log out";
+    ViewData["Title"] = "Logout";
 }
 
-<header>
-    <h1>@ViewData["Title"]</h1>
-    @{
-        if (User.Identity?.IsAuthenticated ?? false)
-        {
-            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post">
-                <button type="submit" class="nav-link btn btn-link text-dark">Click here to Logout</button>
-            </form>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+<div class="container text-center mt-5">
+    <div class="matrix-card-login mx-auto p-5">
+        <h1 class="matrix-title mb-3">Logout Effettuato</h1>
+        <p>Hai effettuato il logout con successo.</p>
+        <a asp-page="/Account/Login" class="btn-matrix mt-3">🔐 Torna al Login</a>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        body {
+            background: #000;
+            color: #39FF14;
+            font-family: 'Share Tech Mono', monospace;
         }
-        else
-        {
-            <p>You have successfully logged out of the application.</p>
+
+        .matrix-card-login {
+            background: #0d0d0d;
+            border: 1px solid #39FF14;
+            border-radius: 10px;
+            box-shadow: 0 0 15px #39FF14;
+            max-width: 450px;
         }
-    }
-</header>
+
+        .matrix-title {
+            color: #39FF14;
+            text-shadow: 0 0 10px #39FF14;
+        }
+
+        .btn-matrix {
+            border: 1px solid #39FF14;
+            color: #39FF14;
+            background: transparent;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all .3s ease;
+            text-decoration: none;
+        }
+
+            .btn-matrix:hover {
+                background: #39FF14;
+                color: #000;
+                box-shadow: 0 0 12px #39FF14;
+            }
+    </style>
+}

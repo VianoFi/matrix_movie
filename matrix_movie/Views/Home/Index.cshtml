@@ -4,21 +4,33 @@
     var watchedMovies = ViewBag.WatchedMovies as List<int> ?? new List<int>();
 }
 
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-
 <div class="container mt-4">
+    <!-- Token antifalsificazione -->
+    <form id="af-token-form" style="display:none;">
+        @Html.AntiForgeryToken()
+    </form>
 
-    <!-- Se Admin: pulsante aggiungi -->
+    <!-- Pulsante Gestione Film (solo Admin) -->
     @if (User.IsInRole("Admin"))
     {
         <div class="text-end mb-4">
-            <a asp-controller="Admin" asp-action="AddMovie" class="btn-matrix">
-                <i class="bi bi-plus-circle"></i> Aggiungi Film
-            </a>
+            <a asp-controller="Admin" asp-action="Index" class="btn-matrix-admin">GESTISCI FILM</a>
         </div>
     }
 
-    <!-- Griglia completa -->
+    <!-- Nessun risultato -->
+    @if (ViewBag.IsSearch == true && !Model.Any())
+    {
+        <div class="text-center mt-5 matrix-empty">
+            ❌ Nessun film trovato
+            @if (!string.IsNullOrEmpty(ViewBag.SearchQuery))
+            {
+                <span> per "<strong>@ViewBag.SearchQuery</strong>"</span>
+            }
+        </div>
+    }
+
+    <!-- Elenco Film -->
     <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-4">
         @foreach (var movie in Model)
         {
@@ -28,31 +40,27 @@
                      onclick="location.href='@Url.Action("Dettagli", "Home", new { id = movie.Id })'">
                     <div class="position-relative">
                         <img src="@movie.ImageUrl" class="card-img-top movie-poster" alt="@movie.Title" />
-
                         @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
                         {
-                            <!-- Aggiungi ai visti -->
+                            <!-- Pulsante Aggiungi ai visti -->
                             @if (isWatched)
                             {
-                                <button class="btn-watch position-absolute top-0 end-0 m-2" disabled title="Già visto">
+                                <button class="btn-watch position-absolute top-0 end-0 m-2" disabled>
                                     <i class="bi bi-check-lg"></i>
                                 </button>
                             }
                             else
                             {
                                 <button class="btn-watch position-absolute top-0 end-0 m-2 add-movie-btn"
-                                        type="button"
-                                        data-movie-id="@movie.Id"
-                                        title="Segna come visto"
+                                        type="button" data-movie-id="@movie.Id"
                                         onclick="event.stopPropagation();">
                                     <i class="bi bi-plus-lg"></i>
                                 </button>
                             }
 
-                            <!-- Aggiungi al carrello -->
+                            <!-- Pulsante Aggiungi al carrello -->
                             <button class="btn-cart position-absolute top-0 start-0 m-2 add-cart-btn"
-                                    type="button"
-                                    data-movie-id="@movie.Id"
+                                    type="button" data-movie-id="@movie.Id"
                                     title="Aggiungi al carrello"
                                     onclick="event.stopPropagation();">
                                 🛒
@@ -68,56 +76,29 @@
         }
     </div>
 
-    <!-- Più visti in fondo -->
-    <div class="mt-5">
-        <h2 class="matrix-subtitle mb-3">🔥 Più Visti</h2>
-        <div class="scroll-section mb-5">
-            <div class="movie-row">
-                @foreach (var movie in Model.Take(10))
-                {
-                    var isWatched = watchedMovies.Contains(movie.Id);
-                    <div class="movie-card position-relative">
-                        <a asp-controller="Home" asp-action="Dettagli" asp-route-id="@movie.Id">
-                            <img src="@movie.ImageUrl" alt="@movie.Title" class="movie-poster" />
-                        </a>
-
-                        @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
-                        {
-                            <!-- Pulsante aggiungi ai visti -->
-                            @if (isWatched)
-                            {
-                                <button class="btn-watch position-absolute top-0 end-0 m-2" disabled title="Già visto">
-                                    <i class="bi bi-check-lg"></i>
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="btn-watch position-absolute top-0 end-0 m-2 add-movie-btn"
-                                        type="button"
-                                        data-movie-id="@movie.Id"
-                                        title="Segna come visto">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                            }
-
-                            <!-- Pulsante aggiungi al carrello -->
-                            <button class="btn-cart position-absolute top-0 start-0 m-2 add-cart-btn"
-                                    type="button"
-                                    data-movie-id="@movie.Id"
-                                    title="Aggiungi al carrello">
-                                🛒
-                            </button>
-                        }
-
-                        <div class="movie-info text-center mt-2">
-                            <h6 class="mb-1 text-truncate">@movie.Title</h6>
-                            <small class="text-muted">@movie.Genre • @movie.Year</small>
+    <!-- Sezione Più Visti -->
+    @if (ViewBag.IsSearch != true && Model.Any())
+    {
+        <div class="mt-5">
+            <h2 class="matrix-subtitle mb-3">🔥 Più Visti</h2>
+            <div class="scroll-section mb-5">
+                <div class="movie-row">
+                    @foreach (var movie in Model.Take(10))
+                    {
+                        <div class="movie-card">
+                            <a asp-controller="Home" asp-action="Dettagli" asp-route-id="@movie.Id">
+                                <img src="@movie.ImageUrl" alt="@movie.Title" class="movie-poster" />
+                            </a>
+                            <div class="movie-info text-center mt-2">
+                                <h6 class="mb-1 text-truncate">@movie.Title</h6>
+                                <small class="text-muted">@movie.Genre • @movie.Year</small>
+                            </div>
                         </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
         </div>
-    </div>
+    }
 </div>
 
 <!-- Modale condivisa -->
@@ -131,16 +112,11 @@
             font-family: 'Share Tech Mono', monospace;
         }
 
-        .matrix-subtitle {
-            color: #39FF14;
-            text-shadow: 0 0 10px #39FF14;
-        }
-
         .matrix-card {
             background: #0d0d0d;
             border: 1px solid #39FF14;
-            transition: transform .2s, box-shadow .3s;
             cursor: pointer;
+            transition: .3s;
         }
 
             .matrix-card:hover {
@@ -156,8 +132,7 @@
             border: 1px solid #39FF14;
         }
 
-        /* Pulsante carrello */
-        .btn-cart {
+        .btn-cart, .btn-watch {
             border: 1px solid #39FF14;
             color: #39FF14;
             background: transparent;
@@ -167,34 +142,41 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all .3s;
+            transition: .3s;
         }
 
-            .btn-cart:hover {
+            .btn-cart:hover, .btn-watch:hover {
                 background: #39FF14;
                 color: #000;
                 box-shadow: 0 0 10px #39FF14;
             }
 
-        /* Scroll più visti */
+        .matrix-subtitle {
+            color: #39FF14;
+            text-shadow: 0 0 10px #39FF14;
+        }
+
+        .matrix-empty {
+            color: #39FF14;
+            text-shadow: 0 0 10px #39FF14;
+            font-size: 1.2rem;
+        }
+
         .scroll-section {
             overflow-x: auto;
             white-space: nowrap;
-            scrollbar-width: thin;
-            scrollbar-color: #39FF14 #111;
         }
 
         .movie-row {
             display: flex;
             gap: 15px;
-            padding-bottom: 5px;
         }
 
         .movie-card {
-            flex: 0 0 auto;
             width: 200px;
-            transition: transform .2s, box-shadow .3s;
+            flex: 0 0 auto;
             text-align: center;
+            transition: .3s;
         }
 
             .movie-card:hover {
@@ -202,20 +184,25 @@
                 box-shadow: 0 0 15px #39FF14;
             }
 
-        .btn-watch {
+        .btn-matrix-admin {
             border: 1px solid #39FF14;
-            color: #39FF14;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            color: #39FF14 !important;
+            background: transparent;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            transition: all .3s ease;
+            text-transform: uppercase;
+            text-decoration: none !important;
+            display: inline-block;
         }
 
-            .btn-watch:hover {
-                background: #39FF14;
-                color: #000;
+            .btn-matrix-admin:hover {
+                background: #39FF14 !important;
+                color: #000 !important;
+                box-shadow: 0 0 12px #39FF14;
+                text-decoration: none !important;
             }
     </style>
 }
@@ -224,9 +211,38 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            // --- Aggiungi ai visti ---
+            // --- Ottiene il token antiforgery ---
+            function getToken() {
+                const el = document.querySelector('#af-token-form input[name="__RequestVerificationToken"]');
+                return el ? el.value : '';
+            }
+
+            // --- Aggiungi al carrello ---
+            document.querySelectorAll('.add-cart-btn').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const id = btn.getAttribute('data-movie-id');
+
+                    fetch('/Carrello/Aggiungi', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'id=' + encodeURIComponent(id)
+                    })
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.success) {
+                                document.getElementById('cart-count').textContent = d.count;
+                                btn.innerHTML = '✔️';
+                                btn.disabled = true;
+                            }
+                        })
+                        .catch(() => console.error('Errore nel caricamento del carrello'));
+                });
+            });
+
+            // --- Aggiungi ai visti (apre modale) ---
             document.querySelectorAll('.add-movie-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('click', e => {
                     e.stopPropagation();
                     const id = btn.getAttribute('data-movie-id');
                     document.getElementById('movieId').value = id;
@@ -235,49 +251,36 @@
                 });
             });
 
-            // --- Aggiungi al carrello ---
-            document.querySelectorAll('.add-cart-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const id = btn.getAttribute('data-movie-id');
-                    fetch('/Carrello/Aggiungi', {
+            // --- Salva film visto ---
+            const saveBtn = document.getElementById('saveWatchedBtn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    const id = document.getElementById('movieId').value;
+                    const date = document.getElementById('watchDate').value;
+                    const comment = document.getElementById('comment').value;
+                    const token = getToken();
+
+                    fetch('/Home/SegnaComeVisto', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: 'id=' + encodeURIComponent(id)
+                        body: `__RequestVerificationToken=${encodeURIComponent(token)}&id=${encodeURIComponent(id)}&watchDate=${encodeURIComponent(date)}&comment=${encodeURIComponent(comment)}`
                     })
-                    .then(r => r.json())
-                    .then(d => {
-                        if (d.success) {
-                            document.getElementById('cart-count').textContent = d.count;
-                            btn.innerHTML = '✔️';
-                            btn.disabled = true;
-                        }
-                    });
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.success) {
+                                const btn = document.querySelector(`.add-movie-btn[data-movie-id="${id}"]`);
+                                if (btn) {
+                                    btn.innerHTML = '✔️';
+                                    btn.disabled = true;
+                                }
+                                bootstrap.Modal.getInstance(document.getElementById('addWatchedModal')).hide();
+                                window.location.href = 'Home/Visti'
+                            } else {
+                                alert('Errore: ' + (d.message || 'Impossibile aggiungere ai visti.'));
+                            }
+                        })
+                        .catch(() => alert('Errore di rete o token mancante.'));
                 });
-            });
-
-            // --- Salva film visto ---
-            document.getElementById('saveWatchedBtn').addEventListener('click', () => {
-                const id = document.getElementById('movieId').value;
-                const date = document.getElementById('watchDate').value;
-                const comment = document.getElementById('comment').value;
-
-                fetch('@Url.Action("SegnaComeVisto", "Home")', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `__RequestVerificationToken=${getToken()}&id=${encodeURIComponent(id)}&watchDate=${encodeURIComponent(date)}&comment=${encodeURIComponent(comment)}`
-                })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.success) window.location.href = '/Home/Visti';
-                    else alert('Errore: ' + d.message);
-                })
-                .catch(() => alert('Errore di rete'));
-            });
-
-            function getToken() {
-                const el = document.querySelector('input[name="__RequestVerificationToken"]');
-                return el ? el.value : '';
             }
         });
     </script>

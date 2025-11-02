@@ -109,12 +109,22 @@ namespace matrix_movie.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
-                // This doesn't count login failures towards account lockout
-                // To enable password failures to trigger account lockout, set lockoutOnFailure: true
                 var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+
+                    // Recupera utente loggato
+                    var userManager = HttpContext.RequestServices.GetRequiredService<UserManager<IdentityUser>>();
+                    var user = await userManager.FindByEmailAsync(Input.Email);
+
+                    // Se è admin → reindirizza a /Admin
+                    if (user != null && await userManager.IsInRoleAsync(user, "Admin"))
+                    {
+                        return LocalRedirect("/Admin");
+                    }
+
+                    // Se non è admin → reindirizza dove previsto
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
@@ -128,13 +138,14 @@ namespace matrix_movie.Areas.Identity.Pages.Account
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "Tentativo di accesso non valido.");
                     return Page();
                 }
             }
 
-            // If we got this far, something failed, redisplay form
+            // Se qualcosa fallisce, ridisplay form
             return Page();
         }
+
     }
 }
