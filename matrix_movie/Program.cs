@@ -20,10 +20,10 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
 
 builder.Services.AddControllersWithViews();
 
-// ✅ Cache necessaria per la sessione
+// Cache necessaria per la sessione
 builder.Services.AddDistributedMemoryCache();
 
-// ✅ Sessione configurata correttamente
+
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromHours(2);
@@ -42,7 +42,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-// ✅ Stripe config
+//Stripe config
 StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
 using (var scope = app.Services.CreateScope())
@@ -51,7 +51,7 @@ using (var scope = app.Services.CreateScope())
     SeedMovies.Inizializza(db);
 }
 
-// ✅ Ordine corretto del middleware
+
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -70,7 +70,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ✅ Sessione deve essere qui (dopo auth, prima delle route)
+
 app.UseSession();
 
 app.MapControllerRoute(

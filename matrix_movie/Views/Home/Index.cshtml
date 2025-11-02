@@ -12,11 +12,12 @@
     @if (User.IsInRole("Admin"))
     {
         <div class="text-end mb-4">
-            <a asp-controller="Admin" asp-action="AddMovie" class="btn-matrix">
-                <i class="bi bi-plus-circle"></i> Aggiungi Film
+            <a asp-controller="Admin" asp-action="Index" class="btn-matrix-admin">
+                GESTISCI FILM
             </a>
         </div>
     }
+
 
     <!-- Griglia completa -->
     <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-4">
@@ -156,6 +157,27 @@
             border: 1px solid #39FF14;
         }
 
+        .btn-matrix-admin {
+            border: 1px solid #39FF14;
+            color: #39FF14;
+            background: transparent;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            transition: all .3s ease;
+            text-transform: uppercase;
+            text-decoration: none;
+        }
+
+            .btn-matrix-admin:hover {
+                background: #39FF14;
+                color: #000;
+                box-shadow: 0 0 12px #39FF14;
+                text-decoration: none;
+            }
+
+
         /* Pulsante carrello */
         .btn-cart {
             border: 1px solid #39FF14;
@@ -217,6 +239,8 @@
                 background: #39FF14;
                 color: #000;
             }
+
+       
     </style>
 }
 

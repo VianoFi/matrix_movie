@@ -1,0 +1,95 @@
+﻿@model matrix_movie.Models.Movie
+@{
+    ViewData["Title"] = "Modifica Film";
+}
+
+<div class="container mt-5">
+    <h1 class="matrix-title mb-4 text-center">✏️ Modifica Film</h1>
+
+    <form asp-action="EditMovie" method="post" class="p-4 rounded shadow matrix-form">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3">
+            <label class="form-label">Titolo</label>
+            <input asp-for="Title" class="form-control matrix-input" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Genere</label>
+            <input asp-for="Genre" class="form-control matrix-input" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Anno</label>
+            <input asp-for="Year" class="form-control matrix-input" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Descrizione</label>
+            <textarea asp-for="Description" class="form-control matrix-input" rows="3"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Trama</label>
+            <textarea asp-for="Plot" class="form-control matrix-input" rows="4"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">URL Immagine</label>
+            <input asp-for="ImageUrl" class="form-control matrix-input" />
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a asp-action="Index" class="btn-matrix-home">⬅️ Torna alla Gestione</a>
+            <button type="submit" class="btn-matrix-admin">💾 Salva Modifiche</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    body {
+        background: #000;
+        color: #39FF14;
+        font-family: 'Share Tech Mono', monospace;
+    }
+
+    .matrix-title {
+        text-shadow: 0 0 15px #39FF14;
+    }
+
+    .matrix-form {
+        background: #0d0d0d;
+        border: 1px solid #39FF14;
+        box-shadow: 0 0 20px #39FF14;
+    }
+
+    .matrix-input {
+        background: #000;
+        color: #39FF14;
+        border: 1px solid #39FF14;
+    }
+
+        .matrix-input:focus {
+            box-shadow: 0 0 10px #39FF14;
+            outline: none;
+        }
+
+    .btn-matrix-admin, .btn-matrix-home {
+        border: 1px solid #39FF14;
+        color: #39FF14;
+        background: transparent;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        text-transform: uppercase;
+        transition: all .3s ease;
+        text-decoration: none;
+    }
+
+        .btn-matrix-admin:hover, .btn-matrix-home:hover {
+            background: #39FF14;
+            color: #000;
+            box-shadow: 0 0 20px #39FF14;
+            text-decoration: none;
+        }
+</style>
