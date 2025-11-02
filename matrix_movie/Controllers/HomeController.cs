@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using System.Diagnostics;
 
 namespace matrix_movie.Controllers
 {
@@ -20,7 +21,6 @@ namespace matrix_movie.Controllers
             _userManager = userManager;
         }
 
-        // -------- HOME (griglia + barra a scorrimento) --------
         public IActionResult Index()
         {
             var movies = _context.Movies.ToList();
@@ -28,108 +28,112 @@ namespace matrix_movie.Controllers
             if (User.Identity?.IsAuthenticated ?? false)
             {
                 var userId = _userManager.GetUserId(User);
-                var watchedIds = _context.UserMovies
+                ViewBag.WatchedMovies = _context.UserMovies
                     .Where(um => um.UserId == userId)
                     .Select(um => um.MovieId)
                     .ToList();
-
-                ViewBag.WatchedMovies = watchedIds;
             }
             else
             {
                 ViewBag.WatchedMovies = new List<int>();
             }
 
+            ViewBag.IsSearch = false;
+            ViewBag.SearchQuery = "";
             return View(movies);
         }
 
-        // -------- DETTAGLI (blocca aggiunta se già visto) --------
-        public IActionResult Dettagli(int id)
+        [HttpGet]
+        public IActionResult Search(string? query, string? genre = "Tutti")
         {
-            var movie = _context.Movies.FirstOrDefault(m => m.Id == id);
-            if (movie == null)
-                return NotFound();
+            var moviesQ = _context.Movies.AsQueryable();
 
-            //  verifica se l'utente loggato ha già visto il film
-            if (User.Identity?.IsAuthenticated == true)
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                var q = query.Trim();
+                moviesQ = moviesQ.Where(m =>
+                    m.Title.Contains(q) ||
+                    m.Genre.Contains(q) ||
+                    (m.Description ?? "").Contains(q) ||
+                    (m.Plot ?? "").Contains(q));
+            }
+
+            if (!string.IsNullOrWhiteSpace(genre) && genre != "Tutti")
+                moviesQ = moviesQ.Where(m => m.Genre == genre);
+
+            var movies = moviesQ.ToList();
+
+            if (User.Identity?.IsAuthenticated ?? false)
             {
                 var userId = _userManager.GetUserId(User);
-                bool isWatched = _context.UserMovies.Any(um => um.UserId == userId && um.MovieId == id);
-                ViewBag.IsWatched = isWatched;
+                ViewBag.WatchedMovies = _context.UserMovies
+                    .Where(um => um.UserId == userId)
+                    .Select(um => um.MovieId)
+                    .ToList();
             }
             else
             {
-                ViewBag.IsWatched = false;
+                ViewBag.WatchedMovies = new List<int>();
             }
+
+            ViewBag.IsSearch = true;
+            ViewBag.SearchQuery = query ?? "";
+            return View("Index", movies);
+        }
+
+        public IActionResult Dettagli(int id)
+        {
+            var movie = _context.Movies.FirstOrDefault(m => m.Id == id);
+            if (movie == null) return NotFound();
+
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userId = _userManager.GetUserId(User);
+                ViewBag.IsWatched = _context.UserMovies.Any(um => um.UserId == userId && um.MovieId == id);
+            }
+            else ViewBag.IsWatched = false;
 
             return View(movie);
         }
 
-
-        // -------- SEGNARE COME VISTO --------
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult SegnaComeVisto(int id, DateTime? watchDate, string? comment)
         {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                if (string.IsNullOrEmpty(userId))
-                    return Json(new { success = false, message = "Utente non autenticato" });
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrEmpty(userId))
+                return Json(new { success = false, message = "Utente non autenticato" });
 
-                var existing = _context.UserMovies.FirstOrDefault(x => x.UserId == userId && x.MovieId == id);
-                if (existing == null)
+            if (!_context.UserMovies.Any(x => x.UserId == userId && x.MovieId == id))
+            {
+                _context.UserMovies.Add(new UserMovie
                 {
-                    _context.UserMovies.Add(new UserMovie
-                    {
-                        UserId = userId,
-                        MovieId = id,
-                        WatchDate = watchDate ?? DateTime.Now,
-                        Comment = comment
-                    });
-                    _context.SaveChanges();
-                }
+                    UserId = userId,
+                    MovieId = id,
+                    WatchDate = watchDate ?? DateTime.Now,
+                    Comment = comment
+                });
+                _context.SaveChanges();
+            }
 
-                return Json(new { success = true });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Errore nel salvataggio del film nei visti");
-                return Json(new { success = false, message = ex.Message });
-            }
+            return Json(new { success = true });
         }
 
-        // -------- LISTA VISTI (ord. cronologico, elimina) --------
         [Authorize]
         public IActionResult Visti()
         {
             var userId = _userManager.GetUserId(User);
-
-            var userMovies = _context.UserMovies
+            var list = _context.UserMovies
                 .Include(um => um.Movie)
                 .Where(um => um.UserId == userId)
                 .OrderByDescending(um => um.WatchDate)
                 .ToList();
-
-            return View(userMovies);
+            return View(list);
         }
 
-        [Authorize]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult EliminaVisto(int id)
-        {
-            var userId = _userManager.GetUserId(User);
-            var record = _context.UserMovies.FirstOrDefault(um => um.Id == id && um.UserId == userId);
-
-            if (record != null)
-            {
-                _context.UserMovies.Remove(record);
-                _context.SaveChanges();
-            }
-
-            return RedirectToAction(nameof(Visti));
-        }
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error() =>
+            View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }
