@@ -6,6 +6,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
 <div class="container mt-4">
+    
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="matrix-title">🗓️ I miei film visti</h1>
         <a asp-controller="Home" asp-action="Index" class="btn-back">⬅ Torna ai film</a>
@@ -168,7 +170,8 @@
                 const id = document.getElementById('editId').value;
                 const date = document.getElementById('editDate').value;
                 const comment = document.getElementById('editComment').value;
-
+                
+                
                 fetch('@Url.Action("ModificaVisto", "Home")', {
                     method:'POST',
                     headers:{'Content-Type':'application/x-www-form-urlencoded'},

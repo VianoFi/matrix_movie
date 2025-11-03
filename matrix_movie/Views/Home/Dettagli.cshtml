@@ -147,7 +147,7 @@
                     const id = document.getElementById('movieId').value;
                     const date = document.getElementById('watchDate').value;
                     const comment = document.getElementById('comment').value;
-
+                    
                     fetch('@Url.Action("SegnaComeVisto", "Home")', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -156,14 +156,15 @@
                     .then(r => r.json())
                     .then(d => {
                         if (d.success) {
-                            bootstrap.Modal.getInstance(document.getElementById('addWatchedModal')).hide();
-                            window.location.href = '/Home/Visti';
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('addWatchedModal'));
+                            if (modal) modal.hide();
+                            // 🔁 Ricarica la pagina corrente per mostrare i dati aggiornati
+                            location.reload();
                         } else {
-                            alert('❌ Errore: ' + (d.message || 'Salvataggio non riuscito.'));
+                            alert('❌ Errore: ' + (d.message || 'salvataggio non riuscito'));
                         }
-                    })
-                    .catch(() => alert('❌ Errore di rete — token mancante o richiesta rifiutata.'));
-                });
+                     });
+
             }
 
             const addCartBtn = document.getElementById('addCartBtn');

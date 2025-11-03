@@ -21,7 +21,7 @@ namespace matrix_movie.Controllers
             _userManager = userManager;
         }
 
-        // ✅ INDEX: carica film + generi
+        // INDEX: carica film + generi
         public IActionResult Index()
         {
             CaricaGeneri();
@@ -46,11 +46,17 @@ namespace matrix_movie.Controllers
             return View(movies);
         }
 
-        // ✅ SEARCH: gestisce ricerca + filtro + generi dinamici
+        // SEARCH: gestisce ricerca + filtro + generi dinamici
         [HttpGet]
         public IActionResult Search(string? query, string? genre = "Tutti")
         {
             CaricaGeneri();
+
+            if (!string.IsNullOrWhiteSpace(query) && query.Length > 200)
+            {
+                ModelState.AddModelError("", "Query di ricerca troppo lunga");
+                return View("Index", new List<Movie>());
+            }
 
             var moviesQ = _context.Movies.AsQueryable();
 
@@ -87,7 +93,7 @@ namespace matrix_movie.Controllers
             return View("Index", movies);
         }
 
-        // ✅ Caricamento dinamico dei generi dal DB
+        // Caricamento dinamico dei generi dal DB
         private void CaricaGeneri()
         {
             var generi = _context.Movies
@@ -117,7 +123,6 @@ namespace matrix_movie.Controllers
             return View(movie);
         }
 
-
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -125,7 +130,6 @@ namespace matrix_movie.Controllers
         {
             try
             {
-                // Ottieni l'ID GUID dell'utente autenticato
                 var userId = _userManager.GetUserId(User);
 
                 if (string.IsNullOrEmpty(userId))
@@ -134,7 +138,6 @@ namespace matrix_movie.Controllers
                     return RedirectToAction("Visti");
                 }
 
-                // Trova il record corrispondente
                 var visto = _context.UserMovies
                     .FirstOrDefault(um => um.MovieId == id && um.UserId == userId);
 
@@ -144,7 +147,6 @@ namespace matrix_movie.Controllers
                     return RedirectToAction("Visti");
                 }
 
-                // Elimina il record e salva
                 _context.UserMovies.Remove(visto);
                 _context.SaveChanges();
 
@@ -158,9 +160,6 @@ namespace matrix_movie.Controllers
             }
         }
 
-
-
-
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -170,8 +169,12 @@ namespace matrix_movie.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Json(new { success = false, message = "Utente non autenticato" });
 
-            if (!_context.UserMovies.Any(x => x.UserId == userId && x.MovieId == id))
+            var existing = _context.UserMovies
+                .FirstOrDefault(x => x.UserId == userId && x.MovieId == id);
+
+            if (existing == null)
             {
+                // Aggiunge nuovo film ai visti
                 _context.UserMovies.Add(new UserMovie
                 {
                     UserId = userId,
@@ -179,11 +182,56 @@ namespace matrix_movie.Controllers
                     WatchDate = watchDate ?? DateTime.Now,
                     Comment = comment
                 });
-                _context.SaveChanges();
+            }
+            else
+            {
+                // Aggiorna data e commento se già visto
+                existing.WatchDate = watchDate ?? existing.WatchDate;
+                existing.Comment = comment;
+                _context.UserMovies.Update(existing);
             }
 
+            _context.SaveChanges();
             return Json(new { success = true });
         }
+
+
+
+        [Authorize]
+        [HttpPost]
+        
+        public IActionResult ModificaVisto(int id, DateTime? watchDate, string? comment)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                    return Json(new { success = false, message = "Utente non autenticato" });
+
+                // Trova il record tramite l'ID univoco di UserMovie
+                var userMovie = _context.UserMovies
+                    .FirstOrDefault(um => um.Id == id && um.UserId == userId);
+
+                if (userMovie == null)
+                    return Json(new { success = false, message = "Film non trovato" });
+
+                // Aggiorna data e commento
+                userMovie.WatchDate = watchDate ?? userMovie.WatchDate;
+                userMovie.Comment = comment;
+
+                _context.UserMovies.Update(userMovie);
+                _context.SaveChanges();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Errore durante la modifica della visione");
+                return Json(new { success = false, message = "Errore interno durante la modifica" });
+            }
+        }
+
+
 
         [Authorize]
         public IActionResult Visti()
@@ -192,6 +240,7 @@ namespace matrix_movie.Controllers
 
             var userId = _userManager.GetUserId(User);
             var list = _context.UserMovies
+                .AsNoTracking()
                 .Include(um => um.Movie)
                 .Where(um => um.UserId == userId)
                 .OrderByDescending(um => um.WatchDate)
@@ -203,8 +252,4 @@ namespace matrix_movie.Controllers
         public IActionResult Error() =>
             View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
-
-
-
-
 }
