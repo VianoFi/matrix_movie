@@ -169,8 +169,12 @@ namespace matrix_movie.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Json(new { success = false, message = "Utente non autenticato" });
 
-            if (!_context.UserMovies.Any(x => x.UserId == userId && x.MovieId == id))
+            var existing = _context.UserMovies
+                .FirstOrDefault(x => x.UserId == userId && x.MovieId == id);
+
+            if (existing == null)
             {
+                // Aggiunge nuovo film ai visti
                 _context.UserMovies.Add(new UserMovie
                 {
                     UserId = userId,
@@ -178,11 +182,56 @@ namespace matrix_movie.Controllers
                     WatchDate = watchDate ?? DateTime.Now,
                     Comment = comment
                 });
-                _context.SaveChanges();
+            }
+            else
+            {
+                // Aggiorna data e commento se già visto
+                existing.WatchDate = watchDate ?? existing.WatchDate;
+                existing.Comment = comment;
+                _context.UserMovies.Update(existing);
             }
 
+            _context.SaveChanges();
             return Json(new { success = true });
         }
+
+
+
+        [Authorize]
+        [HttpPost]
+        
+        public IActionResult ModificaVisto(int id, DateTime? watchDate, string? comment)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                    return Json(new { success = false, message = "Utente non autenticato" });
+
+                // Trova il record tramite l'ID univoco di UserMovie
+                var userMovie = _context.UserMovies
+                    .FirstOrDefault(um => um.Id == id && um.UserId == userId);
+
+                if (userMovie == null)
+                    return Json(new { success = false, message = "Film non trovato" });
+
+                // Aggiorna data e commento
+                userMovie.WatchDate = watchDate ?? userMovie.WatchDate;
+                userMovie.Comment = comment;
+
+                _context.UserMovies.Update(userMovie);
+                _context.SaveChanges();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Errore durante la modifica della visione");
+                return Json(new { success = false, message = "Errore interno durante la modifica" });
+            }
+        }
+
+
 
         [Authorize]
         public IActionResult Visti()
@@ -191,6 +240,7 @@ namespace matrix_movie.Controllers
 
             var userId = _userManager.GetUserId(User);
             var list = _context.UserMovies
+                .AsNoTracking()
                 .Include(um => um.Movie)
                 .Where(um => um.UserId == userId)
                 .OrderByDescending(um => um.WatchDate)

@@ -36,7 +36,7 @@ namespace matrix_movie.Controllers
         // POST: Aggiungi film al carrello
         [AllowAnonymous]
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        
         public IActionResult Aggiungi(int id)
         {
             try
