@@ -1,0 +1,2 @@
+mail: admin@matrixmovie.com
+password: Admin123!
