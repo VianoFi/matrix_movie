@@ -30,8 +30,15 @@
                     <td>@movie.Genre</td>
                     <td>@movie.Year</td>
                     <td>
+                        <!-- ✏️ Modifica -->
                         <a asp-action="EditMovie" asp-route-id="@movie.Id" class="btn-action edit">✏️ Modifica</a>
-                        <a asp-action="DeleteMovie" asp-route-id="@movie.Id" class="btn-action delete">🗑️ Elimina</a>
+
+                        <!-- 🗑️ Elimina (POST + Antiforgery) -->
+                        <form asp-action="DeleteMovie" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@movie.Id" />
+                            <button type="submit" class="btn-action delete">🗑️ Elimina</button>
+                        </form>
                     </td>
                 </tr>
             }
@@ -97,6 +104,12 @@
             color: #000;
             box-shadow: 0 0 10px #39FF14;
             text-decoration: none;
+        }
+
+        .btn-action.delete {
+            border: 1px solid #ff4040;
+            color: #ff4040;
+            background: #000;
         }
 
         .btn-action.delete:hover {

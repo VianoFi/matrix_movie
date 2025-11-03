@@ -8,6 +8,7 @@
 
     <form asp-action="EditMovie" method="post" class="p-4 rounded shadow matrix-form">
         @Html.AntiForgeryToken()
+
         <input type="hidden" asp-for="Id" />
 
         <div class="mb-3">

@@ -8,6 +8,7 @@
 
     <form asp-action="AddMovie" method="post">
         @Html.AntiForgeryToken()
+
         <div class="mb-3">
             <label class="form-label">Titolo</label>
             <input asp-for="Title" class="form-control bg-dark text-light border-success" required />
@@ -41,10 +42,8 @@
                 ⬅ INDIETRO
             </a>
         </div>
-
     </form>
 </div>
-
 
 @section Styles {
     <style>
@@ -72,4 +71,3 @@
             }
     </style>
 }
-

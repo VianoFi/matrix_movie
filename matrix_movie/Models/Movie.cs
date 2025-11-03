@@ -19,7 +19,7 @@ namespace matrix_movie.Models
 
         [Required(ErrorMessage = "Il genere è obbligatorio")]
         [StringLength(50, ErrorMessage = "Genere troppo lungo")]
-        [RegularExpression(@"^[a-zA-Z\s\-]+$", ErrorMessage = "Il genere può contenere solo lettere")]
+        [RegularExpression(@"^[a-zA-Z\s\-/]+$", ErrorMessage = "Il genere può contenere solo lettere")]
         public string Genre { get; set; }
 
         [Required(ErrorMessage = "L'anno è obbligatorio")]
